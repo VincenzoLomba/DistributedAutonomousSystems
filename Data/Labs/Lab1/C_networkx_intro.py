@@ -21,15 +21,17 @@ maxIter = 50 # Number of iterations accordingly to we simulate the dynamic syste
 X = np.zeros((maxIter, N))
 X_init = np.random.rand(N)
 X[0, :] = X_init
+print(X[0, :])
+print("DEDO")
 init_average = np.mean(X_init)
 print(f"Dynamic system initial state values: {X_init}")
-for t in range(1, maxIter-1):
-    X[t+1, 0] = 0.42 # Strubborn node-agent (that behaves differently from the others)(others converge to him)
+for t in range(maxIter-1):
+    # X[t+1, 0] = 0.42 # Eventually present strubborn node-agent (that behaves differently from the others)(others converge to him)
     for i in range(N):
         # Computing the new state value for the node i at time t+1
         Ni = list(erGraph.neighbors(i)) # Notice: i is not contained in Ni
         X[t+1,i] = weightedAdj[i, i]*X[t, i] # Myself
-        for j in Ni: X[t+1, i] += weightedAdj[i, j]*X[t-1, j] # My neighbors
+        for j in Ni: X[t+1, i] += weightedAdj[i, j]*X[t, j] # My neighbors
 
 fig, ax = plt.subplots(figsize=(10,5))
 for i in range(N):
