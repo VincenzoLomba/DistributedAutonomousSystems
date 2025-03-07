@@ -14,24 +14,27 @@ if "%~1" NEQ "" (
 		)
 	)
 )
+rem Retrieving current folder (if not already done)
+if "%setup_path%"=="" set "setup_path=%~dp0.."
 
 rem Check if the container is already running and, in case, entering it
-for /f "tokens=*" %%i in ('docker ps --filter "name=%CONTAINER_NAME%" --format "{{.Names}}"') do set "RUNNING_CONTAINER=%%i"
-if defined RUNNING_CONTAINER (
-	title Entering ROS2 Docker Container
-	echo.
-	echo ====================================================
-	echo +          Entering ROS2 Docker Container          +
-	echo ====================================================
-	echo.
-    echo A Docker Container with name "%CONTAINER_NAME%" is actually running.. entering it^^!
-	docker exec -it %CONTAINER_NAME% /bin/bash
-    exit /b 0
+docker info >nul 2>nul
+if %errorlevel% == 0 (
+	for /f "tokens=*" %%i in ('docker ps --filter "name=%CONTAINER_NAME%" --format "{{.Names}}"') do set "RUNNING_CONTAINER=%%i"
+	if defined RUNNING_CONTAINER (
+		title Entering ROS2 Docker Container
+		echo.
+		echo ====================================================
+		echo +          Entering ROS2 Docker Container          +
+		echo ====================================================
+		echo.
+		echo A Docker Container with name "%CONTAINER_NAME%" is actually running.. entering it^^!
+		docker exec -it %CONTAINER_NAME% /bin/bash
+		exit /b 0
+	)
 )
-
 rem Building ROS2 Docker Image (include checking for Docker to be installed and running)
-cd ../imageBuilding
-call buildimage.bat ros2_humble_image
+call "%setup_path%\imageBuilding\buildimage.bat" ros2_humble_image
 if %errorlevel% NEQ 0 (exit /b 1)
 
 echo.
@@ -40,8 +43,6 @@ echo +          Running ROS2 Docker Container           +
 echo ====================================================
 echo.
 
-rem Retrieving current folder
-set "local_path=%~dp0"
 rem Defining VcXsrv configuration file path & VcXsrv default-to-use IP
 set "xlog_file=%LOCALAPPDATA%\Temp\VCXSrv.0.log"
 set "default_xip=host.docker.internal"
@@ -63,7 +64,7 @@ if exist "%xlaunch_path%" (
     echo You can download VcXsrv from: https://vcxsrv.com/
 	echo Alternatively, you can find the VcXsrv installer in the local folder: "containerRunning\VcXsrv"
 	echo Install VcXsrv, and only after completing the installation, re-run this script^^!
-	start "" "%local_path%VcXsrv\vcxsrv-64.1.17.2.0.installer.zip"
+	start "" "%setup_path%\containerRunning\VcXsrv\vcxsrv-64.1.17.2.0.installer.zip"
     exit /b 1
 )
 
@@ -122,10 +123,10 @@ if "%X_IP%" == "localhost" (
 
 rem Running container...
 echo.
-echo Now running ROS2 Docker Container with name %CONTAINER_NAME%...
+echo Now running ROS2 Docker Container with name %CONTAINER_NAME% and then entering it...
 set "DEV_NAME=user"
 set "WS_NAME=syncworkspace"
-set "WS_PATH=%local_path%..\..\%WS_NAME%"
+set "WS_PATH=%setup_path%\..\%WS_NAME%"
 for %%F in ("%WS_PATH%") do set "WS_PATH=%%~sF"
 docker run --rm -it ^
 	--privileged ^
