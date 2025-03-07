@@ -28,7 +28,8 @@ if %errorlevel% == 0 (
 		echo +          Entering ROS2 Docker Container          +
 		echo ====================================================
 		echo.
-		echo A Docker Container with name "%CONTAINER_NAME%" is actually running.. entering it^^!
+		echo Detected a Docker Container with name "%CONTAINER_NAME%" which is actually running... entering it^^!
+		echo Good work fellow control engineer! ;^)
 		docker exec -it %CONTAINER_NAME% /bin/bash
 		exit /b 0
 	)
@@ -39,7 +40,7 @@ if %errorlevel% NEQ 0 (exit /b 1)
 
 echo.
 echo ====================================================
-echo +          Running ROS2 Docker Container           +
+echo +     Running ^& Entering ROS2 Docker Container     +
 echo ====================================================
 echo.
 
@@ -116,14 +117,15 @@ rem In case VcXsrv in-use IP is localhost (alias 127.0.0.1), setting it to the c
 if "%X_IP%"=="127.0.0.1" set "X_IP=localhost"
 if "%X_IP%" == "localhost" (
 	set "X_IP=%default_xip%"
-	echo VcXsrv is relying on localhost IP =^> using "!X_IP!" as Docker DISPLAY IP address.
+	echo VcXsrv is relying on localhost IP =^> using "!X_IP!" as Docker DISPLAY IP address
 ) else (
-	echo Using !X_IP! as Docker DISPLAY IP address.
+	echo Using !X_IP! as Docker DISPLAY IP address
 )
 
 rem Running container...
 echo.
-echo Now running ROS2 Docker Container with name %CONTAINER_NAME% and then entering it...
+echo Now running ROS2 Docker Container with name %CONTAINER_NAME%, then entering it...
+echo Good work fellow control engineer! ;^)
 set "DEV_NAME=user"
 set "WS_NAME=syncworkspace"
 set "WS_PATH=%setup_path%\..\%WS_NAME%"
