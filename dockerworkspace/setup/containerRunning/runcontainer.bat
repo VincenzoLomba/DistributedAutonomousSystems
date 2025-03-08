@@ -117,9 +117,9 @@ rem In case VcXsrv in-use IP is localhost (alias 127.0.0.1), setting it to the c
 if "%X_IP%"=="127.0.0.1" set "X_IP=localhost"
 if "%X_IP%" == "localhost" (
 	set "X_IP=%default_xip%"
-	echo VcXsrv is relying on localhost IP =^> using "!X_IP!" as Docker DISPLAY IP address
+	echo VcXsrv is relying on localhost IP =^> using "!X_IP!" as Docker env DISPLAY IP address
 ) else (
-	echo Using !X_IP! as Docker DISPLAY IP address
+	echo Using !X_IP! as Docker env DISPLAY IP address
 )
 
 rem Running container...
