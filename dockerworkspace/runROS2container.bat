@@ -6,4 +6,4 @@ if %errorlevel% NEQ 0 (
 	echo.
 	pause
 )
-exit /b %errorlevel%
+exit /b 0
