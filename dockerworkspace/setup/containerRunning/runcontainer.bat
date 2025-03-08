@@ -17,7 +17,7 @@ if "%~1" NEQ "" (
 rem Retrieving current folder (if not already done)
 if "%setup_path%"=="" set "setup_path=%~dp0.."
 
-rem Check if the container is already running and, in case, entering it
+rem Checking if the container is already running and, in case, entering it
 docker info >nul 2>nul
 if %errorlevel% == 0 (
 	for /f "tokens=*" %%i in ('docker ps --filter "name=%CONTAINER_NAME%" --format "{{.Names}}"') do set "RUNNING_CONTAINER=%%i"
