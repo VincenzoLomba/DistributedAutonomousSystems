@@ -62,7 +62,7 @@ if exist "%xlaunch_path%" (
 	echo =^> VcXsrv was also not found in the folder: !xlaunch_path_x86!
 	echo.
 	echo If that is the case, please download and install VcXsrv.
-    echo You can download VcXsrv from: https://vcxsrv.com/
+        echo You can download VcXsrv from: https://vcxsrv.com/
 	echo Alternatively, you can find the VcXsrv installer in the local folder: "containerRunning\VcXsrv"
 	echo Install VcXsrv, and only after completing the installation, re-run this script^^!
 	start "" "%setup_path%\containerRunning\VcXsrv\vcxsrv-64.1.17.2.0.installer.zip"
