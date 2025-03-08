@@ -34,7 +34,7 @@ if %errorlevel% == 0 (
 		exit /b 0
 	)
 )
-rem Building ROS2 Docker Image (include checking for Docker to be installed and running)
+rem Building ROS2 Docker Image (includes checking for Docker to be installed and running)
 call "%setup_path%\imageBuilding\buildimage.bat" ros2_humble_image
 if %errorlevel% NEQ 0 (exit /b 1)
 
