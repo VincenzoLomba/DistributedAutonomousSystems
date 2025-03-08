@@ -61,8 +61,8 @@ if exist "%xlaunch_path%" (
 	echo =^> VcXsrv was not found in the folder: !xlaunch_path!
 	echo =^> VcXsrv was also not found in the folder: !xlaunch_path_x86!
 	echo.
-	echo If that is the case, please download and install VcXsrv.
-        echo You can download VcXsrv from: https://vcxsrv.com/
+	echo If that is the case, please download and install VcXsrv
+	echo You can download VcXsrv from: https://vcxsrv.com/
 	echo Alternatively, you can find the VcXsrv installer in the local folder: "containerRunning\VcXsrv"
 	echo Install VcXsrv, and only after completing the installation, re-run this script^^!
 	start "" "%setup_path%\containerRunning\VcXsrv\vcxsrv-64.1.17.2.0.installer.zip"
@@ -71,14 +71,14 @@ if exist "%xlaunch_path%" (
 
 rem [Re]starting VcXsrv
 tasklist | findstr /I "vcxsrv.exe" >nul
-if %errorlevel%==0 (
+if %errorlevel% == 0 (
     echo VcXsrv already running, reloading it...
     taskkill /F /IM vcxsrv.exe >nul 2>&1
     timeout /t 2 >nul
 ) else (
 	echo Now launching VcXsrv...
 )
-start "" "%xlaunch_exec%"  :0 -ac -multiwindow -clipboard -logverbose 3
+start "" "%xlaunch_exec%" :0 -ac -multiwindow -clipboard -logverbose 3
 
 rem Reading VcXsrv logfile useful content (VcXsrv in-use IP and VcXsrv version)
 echo Searching for the VcXsrv log file...
@@ -86,19 +86,32 @@ timeout /t 2 >nul
 if not exist "%xlog_file%" (
 	rem Unable to locate VcXsrv logfile...
 	echo Warning: unable to locate and access VcXsrv log file^^!
-	echo Using default value for VcXsrv IP address: %default_xip%
+	echo Indeed, VcXsrv log file was not found at the expected location: "!xlog_file!"
+	echo Using default value for VcXsrv IP address: "%default_xip%"
+	echo Warning: without accessing VcXsrv log file, unable to verify whether VcXsrv has been run correctly
+	echo =^> You will have to check it manually by yourself^^!
 	set "X_IP=%default_xip%"
 ) else (
-	rem VcXsrv logfile located, searching for VcXsrv version and in-use IP...
-	findstr /C:"Release:" "%xlog_file%" > "%xlog_file%.vcxsrv_extracted_line.log"
+	rem If available, detecting VcXsrv version...
 	for /f "tokens=2 delims=:" %%A in ('findstr /c:"Release:" "%xlog_file%"') do (set "X_VERSION=%%A")
-	if "!X_VERSION!" neq "" echo Detected VcXsrv version:!X_VERSION!
+	if "!X_VERSION!" NEQ "" echo Detected VcXsrv version:!X_VERSION!
+	rem Check if VcXsrv has been run correctly
+	for /f "tokens=2 delims=:" %%A in ('findstr /c:"server error" "%xlog_file%"') do (set "X_LAUNCH_ERROR=%%A")
+	if "!X_LAUNCH_ERROR!" NEQ "" (
+		echo.
+		echo Attention: unable to successfully run VcXsrv^^!
+		echo Please, check for any errors related to VcXsrv, then re-run this script.
+		echo Printing VcXsrv log trace:
+		for /f "delims=" %%i in ('type "%xlog_file%"') do echo ^| %%i
+		exit /b 1
+	)
+	rem VcXsrv logfile located, searching for VcXsrv version and in-use IP...
 	rem First of all, locating IP and PORT line...
-	findstr /C:"DISPLAY" "%xlog_file%" > "%xlog_file%.vcxsrv_extracted_line2.log"
-	for /f "usebackq delims=" %%A in ("%xlog_file%.vcxsrv_extracted_line2.log") do (set "X_DISPLAY_LINE=%%A"	)
+	findstr /C:"DISPLAY" "%xlog_file%" > "%xlog_file%.vcxsrv_extracted_line.log"
+	for /f "usebackq delims=" %%A in ("%xlog_file%.vcxsrv_extracted_line.log") do (set "X_DISPLAY_LINE=%%A"	)
 	if "!X_DISPLAY_LINE!" == "" (
 		echo Warning: unable to retreive the VcXsrv in-use IP from the log file^^!
-		echo Using default value for VcXsrv IP address: %default_xip%
+		echo Using default value for VcXsrv IP address: "%default_xip%"
 		set "X_IP=%default_xip%"
 	) else (
 		rem Extracting IP and PORT...
@@ -117,9 +130,9 @@ rem In case VcXsrv in-use IP is localhost (alias 127.0.0.1), setting it to the c
 if "%X_IP%"=="127.0.0.1" set "X_IP=localhost"
 if "%X_IP%" == "localhost" (
 	set "X_IP=%default_xip%"
-	echo VcXsrv is relying on localhost IP =^> using "!X_IP!" as Docker env DISPLAY IP address
+	echo VcXsrv is relying on localhost IP ^(alias 127.0.0.1^) =^> using "!X_IP!" as Docker env DISPLAY IP address
 ) else (
-	echo Using !X_IP! as Docker env DISPLAY IP address
+	echo Using "!X_IP!" as Docker env DISPLAY IP address
 )
 
 rem Running container...
