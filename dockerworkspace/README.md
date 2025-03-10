@@ -1,7 +1,7 @@
 ## Hi fellow control engineer! <br>Let's work with ROS2 on a Windows Docker Container!
 
 Hi fellow control engineer!<br>
-Just run [runROS2container.bat][L1], follow its instructions and start working!<br>
+Just download this whole folder, run [runROS2container.bat][L1], follow its instructions and start working!<br>
 **Notice that** the local folder "syncworkspace" and the container folder "/home/user/syncworkspace" will be synchronized in their content!<br>
 <br>
 Otherwise, here are the steps IF you want do the setup manually:
