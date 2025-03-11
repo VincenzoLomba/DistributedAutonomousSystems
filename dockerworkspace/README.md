@@ -1,15 +1,15 @@
 ## Hi fellow control engineer! <br>Let's work with ROS2 on a Windows Docker Container!
 
 Hi fellow control engineer!<br>
-Just download this whole [dockerworkspace][L0] folder (you can download it [from this link][L1]), run [runROS2container.bat][L2], follow its instructions and start working!<br>
+Download both the [setup folder][L0] ([*setup folder downlaod link*][L1]) and the [runROS2container.bat BAT file][L2]. Place them in the same folder (such as it is done in this [dockerworkspace][L3] folder). Then, just run [runROS2container.bat][L2], follow its instructions and start working!<br>
 **Notice that** the local folder "syncworkspace" and the container folder "/home/user/syncworkspace" will be synchronized in their content!<br>
 <br>
-Otherwise, here are the steps in case you want to set it up manually:
-1. Install [Docker Desktop][L3].
-2. Install [VcXsrv][L4], useful to make the Docker Container able to project images and videos in the windows system.
+**Otherwise**, here are the steps in case you want to set it up manually:
+1. Install [Docker Desktop][L4].
+2. Install [VcXsrv][L5], useful to make the Docker Container able to project images and videos in the windows system.
 3. Build the required Docker Image with the command:<br>
    ```docker build "%DOCKERFILE_PATH%" --tag %IMAGE_NAME%```<br>
-   where ```%DOCKERFILE_PATH%``` is the path of the folder which contains the [Dockerfile][L5] and where ```%IMAGE_NAME%``` is the Docker Image name to use.
+   where ```%DOCKERFILE_PATH%``` is the path of the folder which contains the [Dockerfile][L6] and where ```%IMAGE_NAME%``` is the Docker Image name to use.
 4. Run VcXsrv with the command:<br>
    ```"%xlaunch_exec%" :0 -ac -multiwindow -clipboard -logverbose 3```<br>
    where ```%xlaunch_exec%``` is the path of the file ```vcxsrv.exe``` installed at step two.
@@ -19,9 +19,10 @@ Otherwise, here are the steps in case you want to set it up manually:
 
 Good work!
 
-[L0]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/dockerworkspace
-[L1]: https://downgit.github.io/#/home?url=https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/dockerworkspace
+[L0]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/dockerworkspace/setup
+[L1]: https://downgit.github.io/#/home?url=https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/dockerworkspace/setup
 [L2]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/blob/master/dockerworkspace/runROS2container.bat
-[L3]: https://www.docker.com/products/docker-desktop
-[L4]: https://vcxsrv.com/
-[L5]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/blob/master/dockerworkspace/setup/imageBuilding/Dockerfile
+[L3]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/dockerworkspace
+[L4]: https://www.docker.com/products/docker-desktop
+[L5]: https://vcxsrv.com/
+[L6]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/blob/master/dockerworkspace/setup/imageBuilding/Dockerfile
