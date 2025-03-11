@@ -18,8 +18,8 @@ RUN mkdir -p /home/${DEV_NAME}/${WS_NAME}
 RUN apt-get update -q && \
     apt-get install -yq \
         ros-${ROS_DISTRO}-rqt-graph \
-        ros-${ROS_DISTRO}-navigation2 \
-        ros-${ROS_DISTRO}-nav2-bringup \
+#        ros-${ROS_DISTRO}-navigation2 \
+#        ros-${ROS_DISTRO}-nav2-bringup \
         python3-colcon-common-extensions \
     && rm -rf /var/lib/apt/lists/*
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /home/${DEV_NAME}/.bashrc
