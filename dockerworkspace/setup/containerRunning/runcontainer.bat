@@ -29,6 +29,14 @@ if %errorlevel% == 0 (
 		echo ====================================================
 		echo.
 		echo Detected a Docker Container with name "%CONTAINER_NAME%" which is actually running... entering it^^!
+		tasklist | findstr /I "vcxsrv.exe" >nul
+		if !errorlevel! NEQ 0 (
+			echo VcXsrv not actually running, launching it just before entering the container...
+			goto :detectVcXsrv
+			:enterRunningContainerAfterVcXsrvLaunch
+			start "" "%xlaunch_exec%" :0 -ac -multiwindow -clipboard -logverbose 3
+			timeout /t 2 >nul
+		)
 		echo Good work fellow control engineer! ;^)
 		docker exec -it %CONTAINER_NAME% /bin/bash
 		exit /b 0
@@ -37,6 +45,7 @@ if %errorlevel% == 0 (
 rem Building ROS2 Docker Image (includes checking for Docker to be installed and running)
 call "%setup_path%\imageBuilding\buildimage.bat" ros2_humble_image
 if %errorlevel% NEQ 0 (exit /b 1)
+
 
 echo.
 echo ====================================================
@@ -49,9 +58,10 @@ set "xlog_file=%LOCALAPPDATA%\Temp\VCXSrv.0.log"
 set "default_xip=host.docker.internal"
 
 rem Checking for VcXsrv installation
+echo BE AWARE: this script relies on VcXsrv version 1.17.2.0
+:detectVcXsrv
 set "xlaunch_path=C:\Program Files\VcXsrv\vcxsrv.exe"
 set "xlaunch_path_x86=C:\Program Files (x86)\VcXsrv\vcxsrv.exe"
-echo BE AWARE: this script relies on VcXsrv version 1.17.2.0
 if exist "%xlaunch_path%" (
     set "xlaunch_exec=%xlaunch_path%"
 ) else if exist "%xlaunch_path_x86%" (
@@ -68,6 +78,7 @@ if exist "%xlaunch_path%" (
 	start "" "%setup_path%\containerRunning\VcXsrv\vcxsrv-64.1.17.2.0.installer.zip"
     exit /b 1
 )
+if defined RUNNING_CONTAINER goto :enterRunningContainerAfterVcXsrvLaunch
 
 rem [Re]starting VcXsrv
 tasklist | findstr /I "vcxsrv.exe" >nul
