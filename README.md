@@ -16,5 +16,6 @@ All the code is written in [Python](https://www.python.org/about/). All projects
 - [Git, the simple guide](https://rogerdudler.github.io/git-guide/)
 - [Adding an existring project to Git](https://gist.github.com/alexpchin/102854243cd066f8b88e)
 - [How to use .gitignore](https://git-scm.com/docs/gitignore)
+- [How to force a .gitignore update](https://stackoverflow.com/questions/38450276/force-git-to-update-gitignore)
 - [Git Badge Generator](https://michaelcurrin.github.io/badge-generator/#/repo)
 </body>
