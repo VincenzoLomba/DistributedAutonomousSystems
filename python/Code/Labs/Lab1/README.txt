@@ -1,0 +1,1 @@
+Code developed during the lecture about networks and the linear discrete-time averaging. Homework: implement a time-varying version of the averaging scheme in which the graph and the associated weighted adjacency matrix are randomly generated at each iteration k.

@@ -1,0 +1,1 @@
+These parts present some optimization basics along with a system-theoretical approach to the gradient method analysis. Then, parallel optimization algorithms (e.g., the incremental gradient method and the stochastic gradient method) are introduced with their application to federated learning.

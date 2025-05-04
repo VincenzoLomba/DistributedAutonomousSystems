@@ -1,0 +1,10 @@
+
+Se computiamo l'autovalore sinistro della matrice A otteniamo i coefficienti che i dicono come
+sia fatta la media pesata che definisce la somma delle funzioni che dà la funzione verso cui stiamo andando al minimo.
+Weighted average consensus: nel Gradient Tracking Method quello che ci succede se la matrice A non è double ma sono row stochastic
+è che si va al consenso ma non del minimo della funzione di costo ma al minimo di una funzione di costo definita pesando le sotto funzioni
+secondo il detto autovalore sinistro di a
+Se invece abbiamo solo column stochasticity non abbiamo più consenso, abbiamo equilibrio dei vari agenti a valori distenti
+typically the agents are not consensual to the average BUT thier average indeed is the optimum NON E' VERO
+
+Loosing stochasticity so means NOT lossing the equilibria BUT getting a WRONG equilibria
