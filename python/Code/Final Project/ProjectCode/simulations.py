@@ -31,13 +31,13 @@ class TLSimulation:
                 zt = z[j*self.d:(j+1)*self.d]
                 error = self.agentsDistancesNoisy[i,j]**2 - (np.linalg.norm(zt - self.agentsPositions[i]))**2
 
-                error = (np.linalg.norm(zt - self.agentsPositions[i]))**2 - self.agentsDistancesNoisy[i,j]**2
-                direction = zt - self.agentsPositions[i]
+                #error = (np.linalg.norm(zt - self.agentsPositions[i]))**2 - self.agentsDistancesNoisy[i,j]**2
+                #direction = zt - self.agentsPositions[i]
 
                 locCost += error**2
                 direction = zt - self.agentsPositions[i]
       
-                locGrad[j*self.d:(j+1)*self.d] = np.reshape(4*error*direction, (self.d, 1))
+                locGrad[j*self.d:(j+1)*self.d] = np.reshape(-4*error*direction, (self.d, 1))
 
             return locCost, locGrad.reshape((self.d * self.T,))
         return response

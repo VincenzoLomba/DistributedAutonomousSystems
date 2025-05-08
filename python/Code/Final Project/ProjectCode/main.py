@@ -42,7 +42,7 @@ print(s.targetsPositionsInitialGuess())
 
 
 
-res = gradientTrackingMethod(s.A, 0.0001, [s.getLocalCostFunction(i) for i in range(N)], s.targetsPositionsInitialGuess(), 50000, 1e-6)
+res = gradientTrackingMethod(s.A, 0.0001, [s.getLocalCostFunction(i) for i in range(N)], s.targetsPositionsInitialGuess(), 50000, 1e-8)
 
 #print(s.A)
 
