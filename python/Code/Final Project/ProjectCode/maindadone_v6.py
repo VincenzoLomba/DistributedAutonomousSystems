@@ -27,7 +27,7 @@ class Target:
         self.position = np.array(position)
 
 class GradientTrackingOptimizer:
-    def __init__(self, agents, targets, graph_type='erdos_renyi', p_er=0.5, noise_std=0.2):
+    def __init__(self, agents, targets, graph_type='erdos_renyi', p_er=0.8, noise_std=0.2):
         self.agents = agents
         self.targets = targets
         self.num_agents = len(agents)
@@ -126,80 +126,131 @@ class GradientTrackingOptimizer:
         return agent_pos + unit_direction * noisy_dist
         
     def create_communication_graph(self, graph_type, p_er):
-        """Create a connected communication graph between agents"""
+        """Create a connected communication graph between agents with a doubly stochastic matrix"""
         positions = np.array([a.position for a in self.agents])
         
+        # Generate adjacency matrix (no self-loops)
         if graph_type == 'erdos_renyi':
-            # Create Erdos-Renyi random graph
             while True:
                 G = nx.erdos_renyi_graph(self.num_agents, p_er)
                 if nx.is_connected(G):
                     break
             Adj = nx.adjacency_matrix(G).toarray()
         elif graph_type == 'cycle':
-            # Create cycle graph
             G = nx.cycle_graph(self.num_agents)
             Adj = nx.adjacency_matrix(G).toarray()
         else:
-            # Default to complete graph
             G = nx.complete_graph(self.num_agents)
             Adj = nx.adjacency_matrix(G).toarray()
         
-        # Create row-stochastic mixing matrix
-        ONES = np.ones((self.num_agents, self.num_agents))
-        A = Adj + np.eye(self.num_agents)
+        # Compute degrees for each node
+        degrees = np.sum(Adj, axis=1)
         
-        while any(abs(np.sum(A, axis=1) - 1) > 1e-10):
-            A = A / (A @ ONES)
-            A = A / (ONES.T @ A)
-            A = np.abs(A)
+        # Initialize mixing matrix A with zeros
+        A = np.zeros((self.num_agents, self.num_agents))
+        
+        # Apply Metropolis-Hastings weights
+        for i in range(self.num_agents):
+            neighbors = np.nonzero(Adj[i])[0]
+            for j in neighbors:
+                if i < j:  # Process edge once to ensure symmetry
+                    max_deg = max(degrees[i], degrees[j])
+                    weight = 1 / (1 + max_deg)
+                    A[i, j] = weight
+                    A[j, i] = weight
+            # Set self-weight to ensure row-stochasticity
+            A[i, i] = 1 - np.sum(A[i, :])
+        
+        # Debug prints to verify doubly stochastic property
+        print("\n=== Debug: Doubly Stochastic Check ===")
+        print("Matrix A (Metropolis-Hastings weights):")
+        print(np.round(A, 4))  # Print A with 4 decimal places
+        
+        # Check row sums (should be ~1)
+        row_sums = np.sum(A, axis=1)
+        print("\nRow sums (should be ~1):", np.round(row_sums, 6))
+        
+        # Check column sums (should be ~1)
+        col_sums = np.sum(A, axis=0)
+        print("Column sums (should be ~1):", np.round(col_sums, 6))
+        
+        # Verify symmetry (A = A^T)
+        is_symmetric = np.allclose(A, A.T)
+        print("Is symmetric (A = A^T)?", is_symmetric)
+        
+        # Verify doubly stochastic (row/col sums = 1)
+        is_row_stochastic = np.allclose(row_sums, 1.0, atol=1e-6)
+        is_col_stochastic = np.allclose(col_sums, 1.0, atol=1e-6)
+        print("Is doubly stochastic?", is_row_stochastic and is_col_stochastic)
+        print("=" * 40 + "\n")
         
         self.A = A
-        self.Adj = Adj
+        self.Adj = Adj  # Original adjacency (no self-loops)
         
         # Store neighbors and weights for each agent
         for i, agent in enumerate(self.agents):
             agent.neighbors = list(np.nonzero(Adj[i])[0])
-            agent.weights = {j: A[i,j] for j in agent.neighbors}
-            agent.weights[i] = A[i,i]  # self weight
-    
+            agent.weights = {j: A[i, j] for j in agent.neighbors}
+            agent.weights[i] = A[i, i]  # self weight
+
     def initialize_states(self):
-        """Initialize agent states for gradient tracking"""
-        # Each agent will estimate all target positions
+        """Initialize agent states for gradient tracking with better initial guesses"""
+        
         for agent in self.agents:
-            # Initialize with random guesses near the agent's position
-            agent.state = np.random.normal(agent.position, 1, size=(self.num_targets, self.dimension))
+            # Initialize with random guesses with some variance
+            initial_guess = np.random.normal(0, 1, size=(self.num_targets, self.dimension))
+            
+            # Adjust based on this agent's measurements
+            for t_idx in range(self.num_targets):
+                # Create a circle of possible positions at measured distance
+                angle = np.random.uniform(0, 2*np.pi)
+                direction = np.array([np.cos(angle), np.sin(angle)])
+                initial_guess[t_idx] = agent.position   # + direction * agent.noisy_distances[t_idx]
+            
+            agent.state = initial_guess
             # Initialize gradient tracker to zero
             agent.gradient_tracker = np.zeros((self.num_targets, self.dimension))
     
     def cost_function(self, agent, target_estimates):
-        """Compute cost and gradient for an agent's target estimates"""
+        """Improved cost and gradient computation"""
         cost = 0
         gradient = np.zeros((self.num_targets, self.dimension))
         
         for t_idx in range(self.num_targets):
-            # Squared error between measured distance and estimated distance
             estimated_distance = np.linalg.norm(target_estimates[t_idx] - agent.position)
-            error = estimated_distance - agent.noisy_distances[t_idx]
+            error = (estimated_distance**2 - agent.noisy_distances[t_idx]**2)
             
-            # Cost is 1/2 of squared error
-            cost += 0.5 * error**2
+            # More numerically stable cost function
+            cost += error**2
             
-            # Gradient computation
-            if estimated_distance > 1e-6:  # Avoid division by zero
-                direction = (target_estimates[t_idx] - agent.position) / estimated_distance
-                gradient[t_idx] = error * direction
+            # Gradient computation with clipping to prevent large updates
+            direction = (target_estimates[t_idx] - agent.position)
+            gradient[t_idx] = 4 * error * direction
+            
+            # Gradient clipping
+            max_grad_norm = 10.0
+            grad_norm = np.linalg.norm(gradient[t_idx])
+            if grad_norm > max_grad_norm:
+                gradient[t_idx] = gradient[t_idx] * (max_grad_norm / grad_norm)
         
         return cost, gradient
     
-    def run(self, max_iters=100, step_size=0.01):
-        """Run gradient tracking algorithm"""
+    def run(self, max_iters=1000, step_size=0.01):
+        """Run gradient tracking algorithm with adaptive step size and store all agents' states"""
         cost_history = []
         grad_norm_history = []
         consensus_error_history = []
+        estimate_history = []  # Store average estimates at each iteration
+        agent_histories = {a.id: [] for a in self.agents}  # Store each agent's state history
+        
+        # For early stopping based on changes
+        prev_consensus_error = np.inf
+        prev_grad_norm = np.inf
+        min_change = 1e-6  # Minimum change threshold
         
         for k in range(max_iters):
             total_cost = 0
+            total_grad = np.zeros((self.num_targets, self.dimension))
             total_grad_norm = 0
             consensus_error = 0
             
@@ -233,62 +284,104 @@ class GradientTrackingOptimizer:
                 
                 agent.gradient_tracker = new_tracker
             
+            # Store current states for all agents
+            for agent in self.agents:
+                agent_histories[agent.id].append(agent.state.copy())
+            
             # Compute metrics for this iteration
             avg_state = np.mean([a.state for a in self.agents], axis=0)
+            estimate_history.append(avg_state)
+            
             for agent in self.agents:
                 cost, grad = self.cost_function(agent, agent.state)
                 total_cost += cost
-                total_grad_norm += np.linalg.norm(grad)
+                total_grad += grad
                 consensus_error += np.linalg.norm(agent.state - avg_state)
+            
+            total_grad_norm = np.linalg.norm(total_grad)
             
             cost_history.append(total_cost)
             grad_norm_history.append(total_grad_norm)
             consensus_error_history.append(consensus_error)
+            
+            # Early stopping if changes are small
+            if k > 100:
+                consensus_change = abs(consensus_error - prev_consensus_error)
+                grad_norm_change = abs(total_grad_norm - prev_grad_norm)
+                
+                if consensus_change < min_change and grad_norm_change < min_change and consensus_error < min_change and total_grad_norm < min_change:
+                    print(f"Early stopping at iteration {k} - small changes in consensus error ({consensus_change:.2e}) and gradient norm ({grad_norm_change:.2e})")
+                    break
+            
+            prev_consensus_error = consensus_error
+            prev_grad_norm = total_grad_norm
         
-        return cost_history, grad_norm_history, consensus_error_history, avg_state
-    
-    def visualize_results(self, cost_hist, grad_norm_hist, consensus_err_hist, final_est):
-        """Visualize optimization results"""
-        plt.figure(figsize=(15, 5))
+        # Compute final average state
+        final_estimate = np.mean([a.state for a in self.agents], axis=0)
         
-        # Plot cost history
+        # Convert agent histories to numpy arrays
+        for agent_id in agent_histories:
+            agent_histories[agent_id] = np.array(agent_histories[agent_id])
+        
+        return {
+            'cost_history': cost_history,
+            'grad_norm_history': grad_norm_history,
+            'consensus_error_history': consensus_error_history,
+            'final_estimate': final_estimate,
+            'estimate_history': np.array(estimate_history),
+            'agent_histories': agent_histories
+        }
+
+    def visualize_results(self, results):
+        """Enhanced visualization of optimization results with all agents' estimates"""
+        # Unpack results
+        cost_hist = results['cost_history']
+        grad_norm_hist = results['grad_norm_history']
+        consensus_err_hist = results['consensus_error_history']
+        final_est = results['final_estimate']
+        estimate_history = results['estimate_history']
+        agent_histories = results['agent_histories']
+        
+        target_colors = plt.cm.tab10(np.linspace(0, 1, self.num_targets))
+        
+        # 1. Plot optimization metrics
+        plt.figure(figsize=(18, 5))
+        
         plt.subplot(1, 3, 1)
         plt.semilogy(cost_hist)
-        plt.title('Total Cost')
+        plt.title('Total Cost (Log Scale)')
         plt.xlabel('Iteration')
         plt.ylabel('Cost')
         plt.grid(True)
         
-        # Plot gradient norm history
         plt.subplot(1, 3, 2)
         plt.semilogy(grad_norm_hist)
-        plt.title('Total Gradient Norm')
+        plt.title('Total Gradient Norm (Log Scale)')
         plt.xlabel('Iteration')
         plt.ylabel('Gradient Norm')
         plt.grid(True)
         
-        # Plot consensus error
         plt.subplot(1, 3, 3)
         plt.semilogy(consensus_err_hist)
-        plt.title('Consensus Error')
+        plt.title('Consensus Error (Log Scale)')
         plt.xlabel('Iteration')
         plt.ylabel('Error')
         plt.grid(True)
         
         plt.tight_layout()
         
-        # Plot final estimated positions
-        plt.figure(figsize=(8, 6))
-        # Plot agents (red)
+        # 2. Plot final estimates vs true positions
+        plt.figure(figsize=(10, 8))
         agent_positions = np.array([a.position for a in self.agents])
+        
+        # Plot agents
         plt.scatter(agent_positions[:, 0], agent_positions[:, 1], c='red', s=100, label='Agents')
         for i, pos in enumerate(agent_positions):
             plt.text(pos[0], pos[1], f'A{i}', ha='center', va='center', color='white')
         
         # Plot true targets
-        target_colors = ['black', 'blue', 'green', 'purple', 'orange', 'brown'][:self.num_targets]
         plt.scatter(self.target_positions[:, 0], self.target_positions[:, 1], 
-                   c=target_colors, s=100, label='True Targets')
+                   c=target_colors, s=100, label='True Targets', alpha=0.7)
         for i, pos in enumerate(self.target_positions):
             plt.text(pos[0], pos[1], f'T{i}', ha='center', va='center', color='white')
         
@@ -296,20 +389,75 @@ class GradientTrackingOptimizer:
         plt.scatter(final_est[:, 0], final_est[:, 1], 
                    c=target_colors, s=100, marker='x', label='Estimated Targets')
         
+        # Draw error vectors
+        for t_idx in range(self.num_targets):
+            plt.arrow(self.target_positions[t_idx, 0], self.target_positions[t_idx, 1],
+                     final_est[t_idx, 0] - self.target_positions[t_idx, 0],
+                     final_est[t_idx, 1] - self.target_positions[t_idx, 1],
+                     color=target_colors[t_idx], width=0.05, alpha=0.5)
+        
         plt.xlabel('X coordinate')
         plt.ylabel('Y coordinate')
         plt.grid(True)
         plt.legend()
-        plt.title('Final Target Estimates')
+        plt.title('Final Target Estimates with Error Vectors')
         plt.axis('equal')
+        
+        # 3. Plot evolution of all agents' estimates for each target
+        for t_idx in range(self.num_targets):
+            plt.figure(figsize=(14, 6))
+            plt.suptitle(f'Target {t_idx} Coordinate Evolution (All Agents)')
+            
+            # X coordinate evolution
+            plt.subplot(1, 2, 1)
+            # Plot all agents' x estimates
+            for agent in self.agents:
+                x_history = agent_histories[agent.id][:, t_idx, 0]
+                plt.plot(x_history, linewidth=1, color=target_colors[t_idx])
+            
+            # Plot average x estimate
+            plt.plot(estimate_history[:, t_idx, 0], 
+                    color='red', linewidth=2, label='Average estimate')
+            
+            # Plot true x value
+            plt.axhline(y=self.target_positions[t_idx, 0], color='k', 
+                       linestyle='--', linewidth=2, label='True value')
+            
+            plt.xlabel('Iteration')
+            plt.ylabel('X coordinate')
+            plt.grid(True)
+            plt.legend()
+            
+            # Y coordinate evolution
+            plt.subplot(1, 2, 2)
+            # Plot all agents' y estimates
+            for agent in self.agents:
+                y_history = agent_histories[agent.id][:, t_idx, 1]
+                plt.plot(y_history, linewidth=1, color=target_colors[t_idx])
+            
+            # Plot average y estimate
+            plt.plot(estimate_history[:, t_idx, 1], 
+                    color='red', linewidth=2, label='Average estimate')
+            
+            # Plot true y value
+            plt.axhline(y=self.target_positions[t_idx, 1], color='k', 
+                       linestyle='--', linewidth=2, label='True value')
+            
+            plt.xlabel('Iteration')
+            plt.ylabel('Y coordinate')
+            plt.grid(True)
+            plt.legend()
+            
+            plt.tight_layout()
+        
         plt.show()
 
 # Example usage
 if __name__ == "__main__":
     # Create agents and targets
-    np.random.seed(42)
-    num_agents = 10
-    num_targets = 3
+    np.random.seed(32)
+    num_agents = 15
+    num_targets = 5
     area_size = 10
     
     agents = [Agent(i, np.random.uniform(0, area_size, size=2)) for i in range(num_agents)]
@@ -318,6 +466,15 @@ if __name__ == "__main__":
     # Create and run optimizer
     optimizer = GradientTrackingOptimizer(agents, targets, graph_type='cycle', noise_std=0.3)
     
-    # Run optimization and show results
-    cost_hist, grad_norm_hist, consensus_err_hist, final_est = optimizer.run(max_iters=200, step_size=0.01)
-    optimizer.visualize_results(cost_hist, grad_norm_hist, consensus_err_hist, final_est)
+    # Run optimization
+    results = optimizer.run(max_iters=50000, step_size=0.0001)
+
+    # Visualize results
+    optimizer.visualize_results(results)
+
+    # Print final errors
+    final_errors = np.linalg.norm(optimizer.target_positions - results['final_estimate'], axis=1)
+    print("\nFinal target estimation errors:")
+    for t_idx, error in enumerate(final_errors):
+        print(f"Target {t_idx}: {error:.4f}")
+    print(f"Mean error: {np.mean(final_errors):.4f}")
