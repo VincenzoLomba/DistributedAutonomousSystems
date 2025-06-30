@@ -15,7 +15,7 @@ class Agent:
         self.true_distances = None
         self.noisy_distances = None
         
-    def measure_distance_to_targets(self, targets, noise_std=0.1):
+    def measure_distance_to_targets(self, targets, noise_std=0.3):
         """Measure distances to all targets with Gaussian noise"""
         self.true_distances = np.linalg.norm(targets - self.position, axis=1)
         self.noisy_distances = self.true_distances + np.random.normal(0, noise_std, size=len(targets))
@@ -27,7 +27,7 @@ class Target:
         self.position = np.array(position)
 
 class GradientTrackingOptimizer:
-    def __init__(self, agents, targets, graph_type='erdos_renyi', p_er=0.8, noise_std=0.2):
+    def __init__(self, agents, targets, graph_type='erdos_renyi', p_er=0.8, noise_std=0.3):
         self.agents = agents
         self.targets = targets
         self.num_agents = len(agents)
@@ -209,7 +209,8 @@ class GradientTrackingOptimizer:
             
             agent.state = initial_guess
             # Initialize gradient tracker to zero
-            agent.gradient_tracker = np.zeros((self.num_targets, self.dimension))
+            _, initial_gradient = self.cost_function(agent, agent.state)
+            agent.gradient_tracker = initial_gradient
     
     def cost_function(self, agent, target_estimates):
         """Improved cost and gradient computation"""
@@ -227,11 +228,11 @@ class GradientTrackingOptimizer:
             direction = (target_estimates[t_idx] - agent.position)
             gradient[t_idx] = 4 * error * direction
             
-            # Gradient clipping
-            max_grad_norm = 10.0
-            grad_norm = np.linalg.norm(gradient[t_idx])
-            if grad_norm > max_grad_norm:
-                gradient[t_idx] = gradient[t_idx] * (max_grad_norm / grad_norm)
+            # # Gradient clipping
+            # max_grad_norm = 10.0
+            # grad_norm = np.linalg.norm(gradient[t_idx])
+            # if grad_norm > max_grad_norm:
+            #     gradient[t_idx] = gradient[t_idx] * (max_grad_norm / grad_norm)
         
         return cost, gradient
     
@@ -256,26 +257,26 @@ class GradientTrackingOptimizer:
             
             # Store previous states for gradient tracking update
             prev_states = [agent.state.copy() for agent in self.agents]
+            prev_trackers = [agent.gradient_tracker.copy() for agent in self.agents]
             
             # First update: state (target estimates)
             for i, agent in enumerate(self.agents):
                 # Weighted average of neighbors' states
-                new_state = self.A[i,i] * agent.state
+                new_state = self.A[i,i] * prev_states[i]
                 for j in agent.neighbors:
-                    new_state += self.A[i,j] * self.agents[j].state
+                    new_state += self.A[i,j] * prev_states[j]
                 
                 # Gradient descent step
-                _, grad = self.cost_function(agent, agent.state)
-                new_state -= step_size * agent.gradient_tracker
+                new_state -= step_size * prev_trackers[i]
                 
                 agent.state = new_state
             
             # Second update: gradient tracker
             for i, agent in enumerate(self.agents):
                 # Weighted average of neighbors' gradient trackers
-                new_tracker = self.A[i,i] * agent.gradient_tracker
+                new_tracker = self.A[i,i] * prev_trackers[i]
                 for j in agent.neighbors:
-                    new_tracker += self.A[i,j] * self.agents[j].gradient_tracker
+                    new_tracker += self.A[i,j] * prev_trackers[j]
                 
                 # Add gradient difference
                 _, new_grad = self.cost_function(agent, agent.state)
@@ -457,7 +458,7 @@ if __name__ == "__main__":
     # Create agents and targets
     np.random.seed(32)
     num_agents = 15
-    num_targets = 5
+    num_targets = 3
     area_size = 10
     
     agents = [Agent(i, np.random.uniform(0, area_size, size=2)) for i in range(num_agents)]
@@ -478,3 +479,11 @@ if __name__ == "__main__":
     for t_idx, error in enumerate(final_errors):
         print(f"Target {t_idx}: {error:.4f}")
     print(f"Mean error: {np.mean(final_errors):.4f}")
+
+
+
+# Change stopping criteria to make it decentralized
+    # As the convergence to the consensus is faster wrt the convergence to the minimum when an agent
+    # has a gradient norm under tolerance it must stop and tell neighbours to stop, so to propagate the stopping to all neighbours
+# Plot the gradient estimated by every agent and check that they converge to consensus and then to 0
+    # do the same thing for the consensus for each agent
