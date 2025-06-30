@@ -1,39 +1,49 @@
 
 from simulations import TLSimulation
-from methods import gradientTrackingMethod
+from methods import gradientTrackingMethod, adjacencyMatrixCheck
+from simulations import create_communication_graph
 import numpy as np
 
-def check(A):
-    print("\n=== Debug: Doubly Stochastic Check ===")
-    print("Matrix A (Metropolis-Hastings weights):")
-    print(np.round(A, 4))  # Print A with 4 decimal places
-    
-    # Check row sums (should be ~1)
-    row_sums = np.sum(A, axis=1)
-    print("\nRow sums (should be ~1):", np.round(row_sums, 6))
-    
-    # Check column sums (should be ~1)
-    col_sums = np.sum(A, axis=0)
-    print("Column sums (should be ~1):", np.round(col_sums, 6))
-    
-    # Verify symmetry (A = A^T)
-    is_symmetric = np.allclose(A, A.T)
-    print("Is symmetric (A = A^T)?", is_symmetric)
-    
-    # Verify doubly stochastic (row/col sums = 1)
-    is_row_stochastic = np.allclose(row_sums, 1.0, atol=1e-6)
-    is_col_stochastic = np.allclose(col_sums, 1.0, atol=1e-6)
-    print("Is doubly stochastic?", is_row_stochastic and is_col_stochastic)
-    print("=" * 40 + "\n")
+np.random.seed(42) 
 
-    
+N = 12
+d = 2
+def defineLocalCostFunctionTest(dim):
+    A = np.random.randn(dim, dim)
+    Q = A.T @ A + dim * np.eye(dim)  # Definita positiva
+    b = np.random.randn(dim, 1)  # Cambiato da (dim,) a (dim, 1)
+    def localCostFunction(z):
+        cost = 0.5 * z.T @ Q @ z + b.T @ z
+        grad = Q @ z + b.flatten()  # Flatten per restituire (dim,)
+        return cost, grad
+    return localCostFunction, Q, b
+
+localCostFunctions = []
+Qtot = np.zeros((d, d))
+btot = np.zeros((d, 1))
+for _ in range(N):
+    localCostFunction, Q, b = defineLocalCostFunctionTest(d)
+    localCostFunctions.append(localCostFunction)
+    Qtot = Qtot + Q
+    btot = btot + b
+optsol = -np.linalg.inv(Qtot) @ btot
+
+
+A = create_communication_graph(N, p_er=0.6)[0]
+res = gradientTrackingMethod(A, 0.01, localCostFunctions, np.random.randn(N, d), 50000, 1e-8)
+
+optsol = -np.linalg.inv(Qtot) @ btot
+print("Optimal solution:", optsol)
+
+res.visualize_results(d, target_positions = optsol.reshape((1, d)))
+
 
 N = 15
 T = 3
 d = 2
-s = TLSimulation(N, T, d)
+s = TLSimulation(N, T, d, graph_type='erdos-renyi')
 
-check(s.A)
+adjacencyMatrixCheck(s.A)
 
 print("Agents positions:")
 print(s.agentsPositions)
@@ -47,3 +57,5 @@ res = gradientTrackingMethod(s.A, 0.0001, [s.getLocalCostFunction(i) for i in ra
 #print(s.A)
 
 res.visualize_results(d, s.agentsPositions, s.targets)
+
+
