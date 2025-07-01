@@ -1,61 +1,73 @@
 
 from simulations import TLSimulation
-from methods import gradientTrackingMethod, adjacencyMatrixCheck
-from simulations import create_communication_graph
+from methods import gradientTrackingMethod
+from simulations import generateCommunicationGraph, GraphType
 import numpy as np
+import logger
 
-np.random.seed(42) 
+logger.setActive("TASK1.1")
 
-N = 12
-d = 2
-def defineLocalCostFunctionTest(dim):
-    A = np.random.randn(dim, dim)
-    Q = A.T @ A + dim * np.eye(dim)  # Definita positiva
-    b = np.random.randn(dim, 1)  # Cambiato da (dim,) a (dim, 1)
-    def localCostFunction(z):
-        cost = 0.5 * z.T @ Q @ z + b.T @ z
-        grad = Q @ z + b.flatten()  # Flatten per restituire (dim,)
-        return cost, grad
-    return localCostFunction, Q, b
+randomSeed = 42 # Set a random seed for reproducibility
+np.random.seed(randomSeed)
+logger.log("Random seed (for reproducibility) set to: " + str(randomSeed))
 
-localCostFunctions = []
-Qtot = np.zeros((d, d))
-btot = np.zeros((d, 1))
-for _ in range(N):
-    localCostFunction, Q, b = defineLocalCostFunctionTest(d)
-    localCostFunctions.append(localCostFunction)
-    Qtot = Qtot + Q
-    btot = btot + b
-optsol = -np.linalg.inv(Qtot) @ btot
+# Define parameters for the simulation
+Nlist = [12, 17, 17]    # Number of agents for the simulation
+dlist = [2, 3, 3]       # Dimension of agents' states
+gTypes = [GraphType.RGG, GraphType.ERDOS_RENYI, GraphType.PATH]
 
+# Defining a simple method to generate randomically a quadratic cost function
+def defineQuadraticCostFunction(dim):
+        A = np.random.randn(dim, dim)
+        Q = A.T@A + dim*np.eye(dim)  # Q positive definite
+        b = np.random.randn(dim, 1)
+        def localCostFunction(z):
+            cost = 0.5*z.T@Q@z + b.T@z
+            grad = Q@z + b.flatten()
+            return cost, grad
+        return localCostFunction, Q, b
 
-A = create_communication_graph(N, p_er=0.6)[0]
-res = gradientTrackingMethod(A, 0.01, localCostFunctions, np.random.randn(N, d), 50000, 1e-8)
+# Now looping through all the simulations of Task 1.1
+# All of these simulations are generated with random generated quadratic cost functions for the single local agents
+logger.newLine()
+for N, d, gType in zip(Nlist, dlist, gTypes):
+    logger.log("Starting simulation with N=" + str(N) + ", d=" + str(d) + ", graph type " + gType.value)
+    agentsLocalCostFunctions = []
+    Q = np.zeros((d, d))
+    b = np.zeros((d, 1))
+    for _ in range(N):
+        localCostFunction, Q_local, b_local = defineQuadraticCostFunction(d)
+        agentsLocalCostFunctions.append(localCostFunction)
+        Q = Q + Q_local
+        b = b + b_local
+    optimalSolution = -np.linalg.inv(Q)@b
+    A = generateCommunicationGraph(N, graphType=gType)[0]
+    simulationResult = gradientTrackingMethod(A, 0.01, agentsLocalCostFunctions, np.random.randn(N, d), 50000, 1e-7)
+    simulationResult.visualizeResults(d, target_positions = optimalSolution.reshape((1, d)))
 
-optsol = -np.linalg.inv(Qtot) @ btot
-print("Optimal solution:", optsol)
+logger.setActive("TASK1.2")
+randomSeed = 32 # Choose a random seed for reproducibility
 
-res.visualize_results(d, target_positions = optsol.reshape((1, d)))
+# Define parameters for the simulation
+Nlist = [15, 17, 22]    # Number of agents for the simulation
+Tlist = [3, 3, 5]       # Number of targets for the simulation
+dlist = [2, 3, 3]       # Dimension of agents' states
+gTypes = [GraphType.ERDOS_RENYI, GraphType.ERDOS_RENYI, GraphType.RGG]
 
-
-N = 15
-T = 3
-d = 2
-s = TLSimulation(N, T, d, graph_type='erdos-renyi')
-
-adjacencyMatrixCheck(s.A)
-
-print("Agents positions:")
-print(s.agentsPositions)
-print("IG:")
-print(s.targetsPositionsInitialGuess())
-
-
-
-res = gradientTrackingMethod(s.A, 0.0001, [s.getLocalCostFunction(i) for i in range(N)], s.targetsPositionsInitialGuess(), 50000, 1e-8)
-
-#print(s.A)
-
-res.visualize_results(d, s.agentsPositions, s.targets)
-
-
+# Now looping through all the simulations of Task 1.2
+logger.newLine()
+for N, T, d, gType in zip(Nlist, Tlist, dlist, gTypes):
+    logger.newLine()
+    logger.log("Starting simulation with N=" + str(N) + ", T=" + str(T) + ", d=" + str(d) + ", graph type " + gType.value)
+    # Setting up the simulation with the given parameters
+    simulation = TLSimulation(N, T, d, gType, randomSeed, noiseStdDev = 0.3)
+    # Running the gradient tracking method for the given simulation
+    simulationResult = gradientTrackingMethod(
+        simulation.A,
+        0.0001,
+        [simulation.getLocalCostFunction(i) for i in range(N)],
+        simulation.targetsPositionsInitialGuess(),
+        50000,
+        1e-8
+    )
+    simulationResult.visualizeResults(d, simulation.targets, simulation.agentsPositions)

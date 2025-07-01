@@ -49,13 +49,13 @@ def gradientTrackingMethod(A, stepsize, localCostFunctions, decisionVariableInit
             grd[k, i, :] = localGrdValK
         
         # Stopping criteria (useful for debugging and early stopping)(BE AWARE: this is NOT a decentralized stopping criteria)
-        print(np.linalg.norm(totgrd, axis=1)[k])
-        print(totcst[k])
+        #print(np.linalg.norm(totgrd, axis=1)[k])
+        #print(totcst[k])
         if np.linalg.norm(totgrd, axis=1)[k] < tolerance and k > 0:
             print("Stopped at iteration", k)
             break
 
-        print("Iteration", k, "completed")
+        # print("Iteration", k, "completed")
 
         res = GTMSolution(maxIters, N, decisionVariableDimension)
         res.z = z
@@ -83,7 +83,7 @@ class GTMSolution:
         totcst = np.zeros((maxIters, N))
         self.K = 0
 
-    def visualize_results(self, d, target_positions = None, agent_positions = None):
+    def visualizeResults(self, d, target_positions = None, agent_positions = None):
         T = self.decisionVariableDimension // d
         target_colors = plt.cm.tab10(np.linspace(0, 1, T))
         
