@@ -6,7 +6,6 @@ activeTask = None
 
 # A method to set the actual active task (and print a related log message)
 def setActive(task):
-    newLine()
     global activeTask
     activeTask = task.upper()
     log("Starting the execution of " + task + "...")
@@ -17,4 +16,6 @@ def newLine(): log("") if activeTask else print("")
 # The project log function
 def log(word):
     now = datetime.now()
-    print("[" + activeTask + "][" + str(now.strftime("%H:%M:%S")) + "] " + word)
+    prefix = "[" + activeTask + "][" + str(now.strftime("%H:%M:%S")) + "] "
+    lines = str(word).split('\n')
+    for line in lines: print(prefix + line)
