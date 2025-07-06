@@ -3,214 +3,180 @@
 
 # Importing necessary libraries
 import numpy as np                             # Used for numerical operations and array manipulations
-import networkx as nx                          # Used for graph operations and communication graph generation
 import matplotlib.pyplot as plt                # Used for plotting and visualizing results
 from matplotlib.animation import FuncAnimation # Used for creating animations of the optimization process
+import logger                                  # Used as a custom logger
+from graphs import GraphType                   # Importing GraphType enum for defining communication graph types
+from graphs import generateCommunicationGraph  # Importing the custom function to be used to generate communication graphs
 
 class Agent:
     """Agent class, representing a single robot of the multi-robot system"""
 
     def __init__(self, id, position):
-        """Initialize an agent with an identifier and initial position and other attributes set to None or empty.
-        Args:               
-            id (int): Identifier for the agent.
-            position (list or np.array): Initial position of the agent in 2D space.
         """
-        self.id = id # Identifier for the agent
-        self.position = np.array(position, dtype=float) # Current position of the agent (z_i)
-        self.target = None  # Private target (r_i)
-        self.state = None  # Current state estimate of the agent (z_i)
-        self.sigma_estimate = None  # Current stimate of σ(z) (s_i)
-        self.v = None  # Current stimate of (1/N)*∑∇₂ℓ_j(z_j,σ) (v_i)
-        self.neighbors = []  # Communication neighbors
-        self.weights = {}  # Adjacency matrix weights for the agent i related to its neighbors (including itself)
-        self.history = []  # Position history for animation
-        self.gamma = 1.0  # Tradeoff parameter for the local cost function
+        Agent class constructor. Simply gets as inputs the agent id and its initial position.
+        It also initializes as None/empty the various other attributes of the agent.
+        Arguments of the constructor:
+        - id (int): identifier of the agent
+        - position (list or np.array): initial position of the agent
+        """
+        self.id = id                                    # Identifier of the agent
+        self.position = np.array(position, dtype=float) # Initial position of the agent (z_i_0)
+        self.target = None                              # Private local target position (for the single agent) (r_i)
+        self.state = None                               # Current local state of the agent (z_i)
+        self.s = None                                   # Current local estimate of σ(z) (s_i)
+        self.v = None                                   # Current local estimate of (1/N)*∑∇₂ℓ_j(z_j,σ) (v_i)
+        self.neighbors = []                             # Neighbors of the agent (line i of the not-weighted adjacency matrix) (including itself)
+        self.weights = {}                               # Neighbor weights of the agent (line i of the weighted adjacency matrix) (including itself)
+        self.stateHistory = []                          # Agent state history
+        self.gamma = 1.0                                # Tradeoff parameter for the agent local cost function (γ_i)
 
-    def set_target(self, target_position):
-        """Set the private target position for the agent.
-        Args:
-            target_position (list or np.array): Target position (r_i) for the agent.
+    def setTarget(self, target):
         """
-        self.target = np.array(target_position, dtype=float) # Position of the target (r_i)
+        A simple method to set the private local target position (for the single agent).
+        Arguments of the method:
+        - target (list or np.array): private local target position (for the single agent) (r_i).
+        """
+        self.target = np.array(target, dtype=float)
 
-    def set_gamma(self, gamma):
-        """Set the gamma value for the agent.
-        Args:
-            gamma (float): Tradeoff parameter for the local cost function.
+    def setGamma(self, gamma):
         """
-        self.gamma = gamma # Tradeoff parameter for the local cost function (γ_i)
+        A simple method to set the gamma tradeoff parameter for the agent local cost function.
+        Arguments of the method:
+        - gamma (float): tradeoff parameter for the agent local cost function (γ_i)
+        """
+        self.gamma = gamma
 
 class AggregativeOptimizer:
-    """ Class for aggregative tracking optimization in multi-robot systems."""
-    def __init__(self, agents, graph_type='erdos_renyi', p_er=0.8):
-        """Initialize the optimizer with a list of agents and communication graph type.
-        Args:
-            agents (list): List of Agent objects representing the robots.
-            graph_type (str): Type of communication graph ('erdos_renyi', 'cycle', or 'complete').
-            p_er (float): Probability for Erdos-Renyi graph generation.
-        """
-        self.agents = agents # List of agents 
-        self.num_agents = len(agents) # Number of agents
-        self.dimension = 2 # Robot position variable dimension (2D space)
-        self.create_communication_graph(graph_type, p_er) # Create communication graph with create_communication_graph method
-        self.initialize_states() # Initialize agent state, sigma_estimate, v and history with initialize_states method
-    
-    def create_communication_graph(self, graph_type, p_er):
-        """Create a connected communication graph between agents with a doubly stochastic weighted adjacency matrix
-        with Metropolis-Hastings weights.
-        Args:
-            graph_type (str): Type of communication graph ('erdos_renyi', 'cycle', 'star', 'path', or 'complete').
-            p_er (float): Probability for Erdos-Renyi graph generation.
-        """
-        if graph_type == 'erdos_renyi': # Erdos-Renyi graph
-            while True: # Generate a random Erdos-Renyi graph until it is connected
-                G = nx.erdos_renyi_graph(self.num_agents, p_er) # Erdos-Renyi graph generation
-                if nx.is_connected(G): # Check if the graph is connected
-                    break # If connected, exit the loop
-            Adj = nx.adjacency_matrix(G).toarray() # Get adjacency matrix of the graph (no self-loops)
-        elif graph_type == 'cycle': # Cycle graph
-            G = nx.cycle_graph(self.num_agents) # Cycle graph generation
-            Adj = nx.adjacency_matrix(G).toarray() # Get adjacency matrix of the graph (no self-loops)
-        elif graph_type == 'star': # Star graph
-            G = nx.star_graph(self.num_agents - 1) # Star graph generation (num_agents - 1 because the center node is not counted)
-            Adj = nx.adjacency_matrix(G).toarray() # Get adjacency matrix of the graph (no self-loops)
-        elif graph_type == 'path': # Path graph
-            G = nx.path_graph(self.num_agents) # Path graph generation
-            Adj = nx.adjacency_matrix(G).toarray() # Get adjacency matrix of the graph (no self-loops)
-        else: # Complete graph
-            G = nx.complete_graph(self.num_agents) # Complete graph generation
-            Adj = nx.adjacency_matrix(G).toarray() # Get adjacency matrix of the graph (no self-loops)
-        
-        # Metropolis-Hastings weights method for generating doubly stochastic weighted adjacency matrix
-        degrees = np.sum(Adj, axis=1) # Degree of each agent (number of neighbors). Array of shape (num_agents,) with the degree of each agent.  
-        A = np.zeros((self.num_agents, self.num_agents)) # Initialize weighted adjacency matrix with zeros
-        for i in range(self.num_agents): # Iterate over each agent
-            neighbors = np.nonzero(Adj[i])[0] # Get neighbors (indices) of agent i (non-zero entries in row i of the adjacency matrix). Note that this does not include self-loops.
-            for j in neighbors: # Iterate over each neighbor of agent i
-                if i < j: # Ensure each edge is processed only once
-                    max_deg = max(degrees[i], degrees[j]) # Maximum degree of the two agents
-                    weight = 1 / (1 + max_deg) # Metropolis-Hastings weight
-                    A[i, j] = weight # Assign weight to the adjacency matrix
-                    A[j, i] = weight # Assign weight to the adjacency matrix (symmetric)
-            A[i, i] = 1 - np.sum(A[i, :]) # Assign self-loop weight to ensure row sums to 1
-        
-        # Extra check to ensure rows sum to 1
-        for i in range(self.num_agents): # Iterate over each agent
-            row_sum = np.sum(A[i, :]) # Compute sum of weights in the row
-            if not np.isclose(row_sum, 1.0): # Check if the row sum is close to 1
-                A[i, :] /= row_sum # Normalize the row to ensure it sums to 1
-        
-        self.A = A # Store the weighted adjacency matrix
-        
-        # Store neighbors and weights of each agent
-        for i, agent in enumerate(self.agents): # Iterate over each agent
-            agent.neighbors = list(np.nonzero(Adj[i])[0]) # Get neighbors (indices) of agent i (non-zero entries of row i in the adjacency matrix). Note that this does not include self-loops.
-            agent.weights = {j: A[i, j] for j in agent.neighbors} # Get weights of agent i related to neighbors from the weighted adjacency matrix
-            agent.weights[i] = A[i, i] # Get self-loop weight for agent i
+    """
+    AggregativeOptimizer class, to be used to define and simulate a multi-robot aggregative optimization problem.
+    In particular, this class relies on a specific form of the local cost function for each agent, which is defined as:
+    ℓ_i(z_i, σ) = γ_i‖z_i - r_i‖² + ‖σ - z_i‖²
+    """
 
-    def initialize_states(self):
-        """Initialize agent attributes for aggregative tracking: state, sigma_estimate, v, and history."""
-        for agent in self.agents: # Iterate over each agent
-            agent.state = np.array(agent.position, dtype=float) # Current state (z_i) initialized to the initial agent's position z_i_0
-            agent.sigma_estimate = self.phi_i(agent.state) # Initial estimate of agent i of σ(z) (s_i_0) set to ϕ_i(z_i_0) 
-            agent.v = self.gradient_2_cost(agent.state, agent.sigma_estimate) # Initial estimate of (1/N)*∑∇₂ℓ_j(z_j,σ) set to ∇₂ℓ_i(z_i_0, ϕ_i(z_i_0)) 
-            agent.history = [agent.position.copy()] # Initialize history with the initial position of the agent
-
-    def phi_i(self, z_i):
-        """Mapping function ϕ_i(z_i) = z_i
-        Args:
-            z_i (np.array): State of the agent.
-        Returns:
-            np.array: The mapping of the agent's state.
+    def __init__(self, agents, graphType = GraphType.ERDOS_RENYI, pERG = 0.8):
         """
-        return np.array(z_i, dtype=float) # Mapping function ϕ_i(z_i) = z_i
-
-    def cost_function(self, agent, z_i, sigma):
-        """LOCAL COST FUNCTION for agent i: ℓ_i(z_i, σ) = γ_i‖z_i - r_i‖² + ‖σ - z_i‖²
-        Args:
-            agent (Agent): The agent for which the cost is computed.
-            z_i (np.array): State of the agent.
-            sigma (np.array): Estimate of σ(z) or true σ(z).
-        Returns:
-            float: The computed local cost for the agent.
+        AggregativeOptimizer class constructor.
+        Initializes the class with a set of agents and a communication graph among them.
+        Also correctly initializes the agents (in their states and estimates) accordingly to the used local cost function.
+        Arguments of the constructor:
+        - agents (list): list of agents
+        - graphType (GraphType): type of communication graph to be used among agents
+        - pERG (float): probability parameter in case of an Erdos-Renyi graph
         """
-        term1 = agent.gamma * np.linalg.norm(z_i - agent.target)**2 # γ_i‖z_i - r_i‖²
-        term2 = np.linalg.norm(sigma - z_i)**2 # ‖σ - z_i‖²
-        return term1 + term2 # Return the total cost ℓ_i(z_i, σ)
+        self.agents = agents                                              # List of agents 
+        self.A = generateCommunicationGraph(len(agents), graphType, pERG) # Creating the communication graph
+        for i, agent in enumerate(self.agents):                           # Iterating over each agent
+            agent.neighbors = list(np.nonzero(self.A[i])[0])              # Getting agent i neighbors indexes (corresponding to not-zero entries of row i of the adjacency matrix)
+            agent.weights = {j: self.A[i, j] for j in agent.neighbors}    # Getting weights for agent i (related to its neighbors, getted from the weighted adjacency matrix)
+        self.initializeAgents()                                           # Initializing agents
 
-    def gradient_1_cost(self, agent, z_i, sigma):
-        """ Gradient of the local cost function with respect to z_i: ∇₁ℓ_i(z_i, σ) = 2γ_i(z_i - r_i) + 2(z_i - σ)
-        Args:
-            agent (Agent): The agent for which the gradient is computed.
-            z_i (np.array): State of the agent.
-            sigma (np.array): Estimate of σ(z) or true σ(z).
-        Returns:
-            np.array: The computed gradient of the local cost function with respect to z_i.
+    def initializeAgents(self):
+        """Initialize agent attributes for aggregative tracking: state, sigmaEstimate, v, and stateHistory."""
+        for agent in self.agents: # Iterating over each agent
+            agent.state = np.array(agent.position, dtype=float)  # Agent state initialized to the agent initial position (z_i_0)
+            agent.s = self.phi_i(agent.state)                    # Initial estimate of σ(z) for agent i (AKA s_i_0) set to ϕ_i(z_i_0) 
+            agent.v = self.gradient_2_cost(agent.state, agent.s) # Initial estimate of (1/N)*∑∇₂ℓ_j(z_j,σ) for agent i (AKA v_i_0) set to ∇₂ℓ_i(z_i_0, s_i_0) 
+            agent.stateHistory = [agent.state.copy()]            # Initializing the state history for the agent (with indeed its initial state)
+
+    def cost_function(self, gamma, z_i, target, sigma):
         """
-        return 2 * agent.gamma * (z_i - agent.target) + 2 * (z_i - sigma) # Return the gradient ∇₁ℓ_i(z_i, σ)
+        This method implements the local cost function (for agent i) as:
+        ℓ_i(z_i, σ) = γ_i‖z_i - r_i‖² + ‖σ - z_i‖²
+        Arguments of the method:
+        - gamma: tradeoff parameter for the agent local cost function (γ_i)
+        - z_i (np.array): state of agent i
+        - target (np.array): target position of agent i
+        - sigma (np.array): aggregative variable of the aggregative optimization problem
+        Method returns: the computed local cost for the agent (float)
+        """
+        term1 = gamma * np.linalg.norm(z_i - target)**2 # γ_i‖z_i - r_i‖²
+        term2 = np.linalg.norm(sigma - z_i)**2          # ‖σ - z_i‖²
+        return term1 + term2                            # Returns the whole local cost ℓ_i(z_i, σ)
+
+    def gradient_1_cost(self, z_i, sigma):
+        """
+        This method implements the gradient of the local cost function with respect to z_i (the first independent variable), AKA:
+        ∇₁ℓ_i(z_i, σ) = 2γ_i(z_i - r_i) + 2(z_i - σ)
+        Arguments of the method:
+        - z_i (np.array): state of agent i
+        - sigma (np.array): aggregative variable of the aggregative optimization problem
+        Method returns: the computed gradient of the local cost function with respect to z_i (np.array)
+        """
+        return 2 * agent.gamma * (z_i - agent.target) + 2 * (z_i - sigma) # Returns the gradient ∇₁ℓ_i(z_i, σ)
 
     def gradient_2_cost(self, z_i, sigma):
-        """ Gradient of the local cost function with respect to σ: ∇₂ℓ_i(z_i, σ) = 2(σ - z_i)
-        Args:
-            z_i (np.array): State of the agent.
-            sigma (np.array): Estimate of σ(z) or true σ(z).
-        Returns:
-            np.array: The computed gradient of the local cost function with respect to σ.
         """
-        return 2 * (sigma - z_i) # Return the gradient ∇₂ℓ_i(z_i, σ)
+        This method implements the gradient of the local cost function with respect to σ (the second independent variable), AKA:
+        ∇₂ℓ_i(z_i, σ) = 2(σ - z_i)
+        Arguments of the method:
+        - z_i (np.array): state of agent i
+        - sigma (np.array): aggregative variable of the aggregative optimization problem
+        Method returns: the computed gradient of the local cost function with respect to σ (np.array)
+        """
+        return 2 * (sigma - z_i) # Returns the gradient ∇₂ℓ_i(z_i, σ)
 
+    def phi_i(self, z_i):
+        """
+        This method simply implements the ϕ_i(z_i) mapping function as ϕ_i(z_i)=z_i
+        Arguments of the method:
+        - z_i (np.array): state of agent i
+        Method returns: the mapping of the agent i state accordingly to the ϕ_i(z_i) mapping function (np.array)
+        """
+        return np.array(z_i, dtype=float) # Returns the ϕ_i(z_i) mapping function
+    
     def gradient_phi(self, z_i):
-        """Gradient of the mapping function ϕ_i(z_i) = z_i is the identity matrix: ∇ϕ_i(z_i) = I
-        Returns:
-            np.array: The identity matrix of size (dimension, dimension).
         """
-        return np.eye(self.dimension) # Return the identity matrix as the gradient of the mapping function ϕ_i(z_i) = z_i
-
-    def run(self, max_iters=1000, step_size=0.01):
-        """Run aggregative tracking algorithm with local neighbor weights
-        Args:
-            max_iters (int): Maximum number of iterations for the optimization.
-            step_size (float): Step size for the gradient descent updates.
-        Returns:
-            dict: A dictionary containing the optimization results, including cost history, gradient norms, sigma errors, final positions and final sigma estimate.
+        This method simply implements the gradient of the ϕ_i(z_i) mapping function (AKA ∇ϕ_i(z_i))
+        Given ϕ_i(z_i)=z_i, its gradient is the identity matrix: ∇ϕ_i(z_i) = I
+        Method returns: the identity matrix gradient of ϕ_i(z_i) (np.array)
         """
-        cost_history = [] # Initialize cost history as an empty list
-        grad_norm_history = [] # Initialize gradient norm history as an empty list
-        sigma_error_history = [] # Initialize sigma error history as an empty list
-        sigma_estimate_history = [] # Initialize sigma estimate history as an empty list
+        return np.eye(len(z_i)) # Returns the gradient ∇ϕ_i(z_i) = I
 
-        for k in range(max_iters): # Iterate over the number of iterations
-            prev_states = [agent.state.copy() for agent in self.agents] # Store previous states (z_i) for each agent
-            prev_sigmas = [agent.sigma_estimate.copy() for agent in self.agents] # Store previous sigma estimates (s_i) for each agent
-            prev_vs = [agent.v.copy() for agent in self.agents] # Store previous v_i for each agent
+    def simulate(self, maxIterations=1000, stepsize=0.01):
+        """
+        This method runs the distributed aggregative tracking algorithm
+        Arguments of the method:
+        - maxIterations (int): maximum number of iterations
+        - stepsize (float): step size for the gradient descent updates
+        Method returns: a dictionary containing results
+        """
+        costHistory = []          # Initialize the cost history as an empty list
+        gradNormHistory = []      # Initialize the gradient norm history as an empty list
+        sigmaErrorHistory = []    # Initialize the sigma error history as an empty list
+        sigmaEstimateHistory = [] # Initialize the sigma estimate history as an empty list
 
-            # Update state (z_i) 
+        # Main loop of the distributed aggregative tracking algorithm simulation
+        for k in range(maxIterations):
+            agentsPreviousStates = [agent.state.copy() for agent in self.agents] # Storing the previous states for all agents
+            previousSigmaEstimates = [agent.s.copy() for agent in self.agents]   # Storing the previous sigma estimates for all agents
+            previousVs = [agent.v.copy() for agent in self.agents]               # Storing the previous ∇₂ℓ_i(z_i, σ) estimates for each agent
+
+            # State update (z_i)
             for agent in self.agents: # Iterate over each agent
-                grad_term = ( # Local gradient term for the agent
+                gradientTerm = (
                     self.gradient_1_cost(agent, agent.state, agent.sigma_estimate) + # ∇₁ℓ_i(z_i, s_i)
-                    self.gradient_phi(agent.state) @ agent.v # ∇ϕ_i(z_i) * v_i
-                )
-                agent.state -= step_size * grad_term # Update the agent's state (z_i) using gradient descent
-                agent.position = agent.state.copy() # Update the agent's position (z_i) to the new state
-                agent.history.append(agent.position.copy()) # Append the new position to the agent's history for animation
+                    self.gradient_phi(agent.state) @ agent.v                         # ∇ϕ_i(z_i)*v_i
+                ) # local gradient term of agent i (partial derivative of the cost function w.r.t. z_i)
+                agent.state -= stepsize * gradientTerm      # Updating the agent's state (z_i) relying on Gradient Method
+                agent.history.append(agent.state.copy())    # Appending the new state to the agent's states history
 
-            # Update sigma_estimate (s_i) 
+            # Sigma estimate update (s_i) 
             for i, agent in enumerate(self.agents): # Iterate over each agent
-                new_sigma = agent.weights[agent.id] * prev_sigmas[i] # Start with the term related to the agent itself
+                newSigmaEstimate = agent.weights[agent.id] * previousSigmaEstimates[i] # Starting with the term related to the agent itself
                 for j in agent.neighbors: # Iterate over each neighbor of the agent
-                    new_sigma += agent.weights[j] * prev_sigmas[j] # Add contributions from neighbors
-                new_sigma += self.phi_i(agent.state) - self.phi_i(prev_states[agent.id]) # Add the innovation term
-                agent.sigma_estimate = new_sigma # Update the agent's sigma estimate (s_i)
+                    newSigmaEstimate += agent.weights[j] * previousSigmaEstimates[j] # Add contributions from neighbors
+                newSigmaEstimate += self.phi_i(agent.state) - self.phi_i(agentsPreviousStates[agent.id]) # Add the innovation term
+                agent.sigma_estimate = newSigmaEstimate # Update the agent's sigma estimate (s_i)
 
             # Update v (v_i) 
             for i, agent in enumerate(self.agents): # Iterate over each agent
-                new_v = agent.weights[agent.id] * prev_vs[i] # Start with the term related to the agent itself
+                new_v = agent.weights[agent.id] * previousVs[i] # Start with the term related to the agent itself
                 for j in agent.neighbors: # Iterate over each neighbor of the agent
-                    new_v += agent.weights[j] * prev_vs[j] # Add contributions from neighbors
+                    new_v += agent.weights[j] * previousVs[j] # Add contributions from neighbors
                 new_v += ( # Add the innovation term
                     self.gradient_2_cost(agent.state, agent.sigma_estimate) -
-                    self.gradient_2_cost(prev_states[agent.id], prev_sigmas[agent.id])
+                    self.gradient_2_cost(agentsPreviousStates[agent.id], previousSigmaEstimates[agent.id])
                 )
                 agent.v = new_v # Update the agent's v (v_i)
 
@@ -238,7 +204,7 @@ class AggregativeOptimizer:
                 for agent in self.agents # Iterate over each agent to sum their sigma estimation errors
             )
 
-            cost_history.append(total_cost) # Append the total cost to the cost history
+            costHistory.append(total_cost) # Append the total cost to the cost history
             grad_norm_history.append(total_grad_norm) # Append the total gradient norm to the gradient norm history
             sigma_error_history.append(total_sigma_error) # Append the total sigma estimation error to the sigma error history
             sigma_estimate_history.append([agent.sigma_estimate.copy() for agent in self.agents]) # Append each agent's sigma estimate to the history
@@ -248,7 +214,7 @@ class AggregativeOptimizer:
                 break 
 
         return { # Return optimization results as a dictionary
-            'cost_history': cost_history, # Total cost history
+            'cost_history': costHistory, # Total cost history
             'grad_norm_history': grad_norm_history, # Total gradient norm history
             'sigma_error_history': sigma_error_history, # Total sigma estimation error history
             'final_positions': [agent.position for agent in self.agents], # Final positions of all agents
@@ -452,15 +418,15 @@ if __name__ == "__main__":
     
     # Assign private targets
     for agent in agents: # Iterate over each agent
-        agent.set_target(np.random.uniform(0, area_size, size=2)) # Set a random target position (r_i) for each agent with set_target method
+        agent.setTarget(np.random.uniform(0, area_size, size=2)) # Set a random target position (r_i) for each agent with set_target method
     
     # Set different gamma values
     for i, agent in enumerate(agents): # Iterate over each agent
-        agent.set_gamma(1.0) # Set gamma (γ_i) for each agent with set_gamma method
+        agent.setGamma(1.0) # Set gamma (γ_i) for each agent with set_gamma method
     
     # Create and run optimizer
-    optimizer = AggregativeOptimizer(agents, graph_type='cycle') # Create an instance of AggregativeOptimizer with the list of agents and communication graph type
-    results = optimizer.run(max_iters=10000, step_size=0.01) # Run the optimization with run method
+    optimizer = AggregativeOptimizer(agents, graphType='cycle') # Create an instance of AggregativeOptimizer with the list of agents and communication graph type
+    results = optimizer.simulate(maxIterations=10000, stepsize=0.01) # Run the optimization with run method
     
     # Visualize results
     optimizer.visualize_results(results) # Visualize the optimization results with visualize_results method
