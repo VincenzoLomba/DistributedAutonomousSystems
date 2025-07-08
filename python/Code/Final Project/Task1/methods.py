@@ -128,6 +128,8 @@ class GTMSolution:
         # First set of plots: optimization metrics
         plt.figure(figsize=(13, 7))
         plt.gcf().canvas.manager.set_window_title("Optimization Metrics")
+        try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
+        except: pass  # Ignore if window positioning is not supported
         
         # Define a 1x3 grid for subplots and select the first one: total cost
         plt.subplot(1, 3, 1)
@@ -187,6 +189,8 @@ class GTMSolution:
 
         # Second set of plots: communication graph
         plt.figure(figsize=(7, 7))
+        try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
+        except: pass  # Ignore if window positioning is not supported
         G = nx.from_numpy_array(self.A)
         pos = nx.spring_layout(G, seed=42, k=2, iterations=50) # a nice layout for better node positioning
         # Draw nodes
@@ -213,10 +217,14 @@ class GTMSolution:
             if d == 2:
                 fig = plt.figure(figsize=(7, 7))
                 fig.canvas.manager.set_window_title("Map")
+                try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
+                except: pass  # Ignore if window positioning is not supported
                 ax = fig.add_subplot(111) # 111: subplot with 1 row, 1 column, select 1st subplot
             else:
                 fig = plt.figure(figsize=(7, 7))
                 fig.canvas.manager.set_window_title("Map")
+                try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
+                except: pass  # Ignore if window positioning is not supported
                 ax = fig.add_subplot(111, projection='3d') # for 3D plotting
 
             # Plotting the various agents
@@ -274,6 +282,8 @@ class GTMSolution:
         for index in range(T):
             
             fig, axes = plt.subplots(1, d, figsize = (5*d, 5))
+            try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
+            except: pass  # Ignore if window positioning is not supported
             if d == 1: axes = [axes]  # This ensures axes is iterable even for d=1
             if T > 1: 
                 plt.suptitle(f'Target {index} Estimate Evolution (for all agents)')
@@ -308,6 +318,8 @@ class GTMSolution:
             '''
             # Repeat all the above plots BUT in error form (i.e., currentEstimate - trueValue)
             fig, axes = plt.subplots(1, d, figsize = (5*d, 5))
+            try: fig.canvas.manager.window.move(10, 10)
+            except: pass
             if d == 1: axes = [axes]  # This ensures axes is iterable even for d=1
             if T > 1: 
                 plt.suptitle(f'Target {index} Estimate Error Evolution (for all agents)')

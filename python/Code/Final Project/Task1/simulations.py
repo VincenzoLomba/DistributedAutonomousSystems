@@ -80,6 +80,14 @@ class TLSimulation:
             for t in range(self.T): initialGuessForAgent[t*self.d:(t+1)*self.d] = np.reshape(self.agentsPositions[i], (self.d, 1))
             initialGuess[i, :] = np.reshape(initialGuessForAgent, (self.T*self.d,))
         return initialGuess
+    
+    def getDistancesNoisesMatrix(self):
+        """
+        This method returns the matrix of the noisies of the distances between agents and targets.
+        In particular, it returns a (N,T) matrix where each entry indicates the amount of noise added to the distance measurement for that agent-target pair.
+        """
+        return self.agentsDistancesNoisy - self.agentsDistances
+        
 
 def generateConnectedRGG(N, communicationRadius, L, d):
     """

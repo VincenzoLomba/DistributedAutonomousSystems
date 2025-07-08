@@ -16,9 +16,12 @@ def task1dot1():
     logger.log("Random seed (for reproducibility) set to: " + str(randomSeed))
 
     # Define parameters for the simulation
-    Nlist = [12, 17, 17]    # Number of agents for the simulation
-    dlist = [2, 3, 3]       # Dimension of agents' states
-    gTypes = [GraphType.RGG, GraphType.ERDOS_RENYI, GraphType.PATH]
+    Nlist = [12, 17, 17]                                            # Number of agents for the simulation
+    dlist = [2, 3, 3]                                               # Dimension of agents' states
+    gTypes = [GraphType.RGG, GraphType.ERDOS_RENYI, GraphType.PATH] # Type of communication graph to be used
+    stepsize = 0.01                                                 # Stepsize to be used
+    maxIterations = 50000                                           # Maximum number of iterations for the simulation
+    tolerance = 1e-7                                                # Tolerance to be used for the convergence of the method
 
     # Defining a simple method to generate randomically a quadratic cost function
     def defineQuadraticCostFunction(dim):
@@ -48,7 +51,8 @@ def task1dot1():
         A = generateCommunicationGraph(N, graphType=gType)[0]
         # logger.log("Weighted adjacency matrix:")
         # logger.log(np.array2string(A, precision=2, suppress_small=True))
-        simulationResult = gradientTrackingMethod(A, 0.01, agentsLocalCostFunctions, np.random.randn(N, d), 50000, 1e-7)
+        simulationResult = gradientTrackingMethod(A, stepsize, agentsLocalCostFunctions, np.random.randn(N, d), maxIterations, tolerance)
+        logger.log("Simulation completed, now visualizing results")
         simulationResult.visualizeResults(d, optimalSolution.reshape((1, d)))
         logger.newLine()
 
@@ -56,30 +60,38 @@ def task1dot2():
 
     logger.setActive("TASK1.2")
     randomSeed = 32 # Choose a random seed for reproducibility
+    logger.log("Random seed (for reproducibility) set to: " + str(randomSeed))
 
     # Define parameters for the simulation
-    Nlist = [15, 17, 22]    # Number of agents for the simulation
-    Tlist = [3, 3, 5]       # Number of targets for the simulation
-    dlist = [2, 3, 3]       # Dimension of agents' states
-    gTypes = [GraphType.ERDOS_RENYI, GraphType.ERDOS_RENYI, GraphType.RGG]
+    Nlist = [15, 17, 22]                                                   # Number of agents for the simulation
+    Tlist = [3, 3, 5]                                                      # Number of targets for the simulation
+    dlist = [2, 3, 3]                                                      # Dimension of agents' states
+    gTypes = [GraphType.ERDOS_RENYI, GraphType.ERDOS_RENYI, GraphType.RGG] # Type of communication graph to be used
+    stepsize = 0.0001                                                      # Stepsize to be used
+    maxIterations = 50000                                                  # Maximum number of iterations for the simulation
+    tolerance = 1e-8                                                       # Tolerance to be used for the convergence of the method
+    noiseStdDev = 0.2                                                      # Standard deviation of the noise to be added to the measurements of the targets' positions
 
     # Now looping through all the simulations of Task 1.2
     logger.newLine()
     for N, T, d, gType in zip(Nlist, Tlist, dlist, gTypes):
         logger.log("Starting simulation with N=" + str(N) + ", T=" + str(T) + ", d=" + str(d) + ", graph type " + gType.value)
         # Setting up the simulation with the given parameters
-        simulation = TLSimulation(N, T, d, gType, randomSeed, noiseStdDev = 0.2)
+        simulation = TLSimulation(N, T, d, gType, randomSeed, noiseStdDev)
         # logger.log("Weighted adjacency matrix:")
         # logger.log(np.array2string(simulation.A, precision=2, suppress_small=True))
+        # logger.log("Distance noises matrix (amount of noise for each agent-target pair)(transposed):")
+        # logger.log(np.array2string(simulation.getDistancesNoisesMatrix().T, precision=2, suppress_small=True, max_line_width=200))
         # Running the gradient tracking method for the given simulation
         simulationResult = gradientTrackingMethod(
             simulation.A,
-            0.0001,
+            stepsize,
             [simulation.getLocalCostFunction(i) for i in range(N)],
             simulation.targetsPositionsInitialGuess(),
-            50000,
-            1e-8
+            maxIterations,
+            tolerance
         )
+        logger.log("Simulation completed, now visualizing results")
         simulationResult.visualizeResults(d, simulation.targets, simulation.agentsPositions)
         logger.newLine()
 
