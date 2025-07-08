@@ -1,4 +1,5 @@
 
+# Importing necessary libraries
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -269,7 +270,7 @@ class GTMSolution:
             ax.legend()
             plt.title('Final Target Estimates with Error Vectors')
 
-        # 3. Fourth set of plots: evolution of estimates and errors (for each target)
+        # Fourth set of plots: evolution of estimates and errors (for each target)
         for index in range(T):
             
             fig, axes = plt.subplots(1, d, figsize = (5*d, 5))

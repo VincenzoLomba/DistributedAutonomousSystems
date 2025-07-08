@@ -1,4 +1,6 @@
 
+# Task1: a code that implements a Gradient Tracking Method, tests it and uses it to solve cooperative multi-robot target localization problems
+
 from simulations import TLSimulation
 from methods import gradientTrackingMethod
 from simulations import generateCommunicationGraph, GraphType
