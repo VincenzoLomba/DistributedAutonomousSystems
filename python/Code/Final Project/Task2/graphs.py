@@ -51,4 +51,5 @@ def generateCommunicationGraph(N, graphType=GraphType.ERDOS_RENYI, pERG=0.6):
                     A[i, j] = weight
                     A[j, i] = weight
             A[i, i] = 1 - np.sum(A[i, :])
+        
         return A
