@@ -1,0 +1,3 @@
+colcon build
+source install/setup.bash
+ros2 launch aggregative_optimization aggregative_optimization_launch.py
