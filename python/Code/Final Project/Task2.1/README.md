@@ -1,6 +1,6 @@
 # Distributed Autonomous Systems Project: Task 2.1
 
-This folder contains all the code related to Task 2.1 of the DAS Final Project. It implements a multi-robot (AKA multi-agent) aggregative optimization algorithm with visualization and animation capabilities.
+This folder contains all the code related to Task 2.1 of the DAS Final Project. It implements implements a multi-robot (AKA multi-agent) aggregative optimization algorithm with visualization and animation capabilities.<br>
 For a more detailed explanation of the methods used in the code, please refer to the comments and descriptions included within each file. For a broader understanding of the project, consult the Final Report.
 
 ## How to Use the Task 2.1 Code
