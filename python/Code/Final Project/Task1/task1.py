@@ -86,7 +86,7 @@ def task1dot2(Nlist, Tlist, dlist, gTypes, stepsize, maxIterations, tolerance, n
         simulationResult.visualizeResults(d, simulation.targets, gType, simulation.agentsPositions)
         logger.newLine()
 
-if __name__ == "__main__":
+def main():
     
     logger.newLine()
     
@@ -113,3 +113,5 @@ if __name__ == "__main__":
     tolerance = 1e-8                                                       # Tolerance to be used for the convergence of the method
     noiseStdDev = 0.2                                                      # Standard deviation of the noise to be added to the measurements of the targets' positions
     task1dot2(Nlist, Tlist, dlist, gTypes, stepsize, maxIterations, tolerance, noiseStdDev)
+
+if __name__ == "__main__": main()

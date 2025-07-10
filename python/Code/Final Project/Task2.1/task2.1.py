@@ -40,7 +40,7 @@ def task2dot1(N, L, d, graph, stepsize, maxIterations, tolerance):
     anm = optimizer.animateResults(targets, stateHistories, framesInterval=50, showIterations=True) # Create the animation with animate_results method
     if anm: plt.show()                                                                              # Show the animation plot
 
-if __name__ == "__main__":
+def main():
 
     # Define parameters for the simulation
     N = 8                    # Number of agents in the multi-robot system
@@ -51,3 +51,5 @@ if __name__ == "__main__":
     maxIterations = 10000    # Maximum number of iterations for the simulation
     tolerance = 1e-7         # Tolerance to be used for the convergence of the method
     task2dot1(N, L, d, graph, stepsize, maxIterations, tolerance)
+
+if __name__ == "__main__": main()
