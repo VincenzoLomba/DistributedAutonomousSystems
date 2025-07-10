@@ -52,6 +52,10 @@ class PlotterNode(Node):
                 self.visualizeResultsAndAnimation()
                 raise SystemExit
             return # Early return to avoid processing the termination message as regular data
+        
+        if iteration == EndType.ERROR.value: # Check if this is an error message (iteration = -2)
+            self.get_logger().error(f"Agent {agentID} reported an error - terminating plotter")
+            raise SystemExit
             
         if agentID not in self.agentsData: # Check if the agent data is already stored; if not, initialize for it
             self.agentsData[agentID] = {

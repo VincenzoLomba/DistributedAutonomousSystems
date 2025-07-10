@@ -291,7 +291,11 @@ class Agent(Node):
             self.visuPublisher.publish(finalVisMsg)                       # Publish the final message to the '/visualization_data' topic
             self.log(f"Optimization completed!", self.LogType.INFO)       # Log that the agent has completed optimization
             raise SystemExit                                              # Raise a SystemExit to stop the local agent
-        else: raise SystemExit
+        else:
+            finalVisMsg = MsgFloat()                                        # Create a final message (from the local agent to the '/visualization_data' topic) to indicate the occurrence of an error
+            finalVisMsg.data = [float(self.id), float(EndType.ERROR.value)] # Set the first element to agent ID and the second element to EndType.ERROR (to indicate the occurrence of an error)
+            self.visuPublisher.publish(finalVisMsg)                         # Publish the final message to the '/visualization_data' topic
+            raise SystemExit
 
 # Main function to be used to run the Agent Node
 def main(args=None):
@@ -300,12 +304,12 @@ def main(args=None):
     try:
         agent.log(f"Starting...", agent.LogType.INFO)      # Log an informational message indicating that agent i (of id=i) is starting up
         # time.sleep(1 + agent.id * 0.2)                   # Optional staggered startup delay based on agent ID
-        time.sleep(1)                                      # Wait for a second to ensure all nodes are ready (this is useful to avoid issues with message passing at startup)
+        #time.sleep(1)                                      # Wait for a second to ensure all nodes are ready (this is useful to avoid issues with message passing at startup)
         rclpy.spin(agent)                                  # Enter a loop that keeps the Agent Node alive (AKA spinning it)
     except (SystemExit, KeyboardInterrupt):                # Catch SystemExit and/or KeyboardInterrupt exceptions (to handle and allow a graceful shutdown)
         agent.log("Shutting down...", agent.LogType.INFO)  # Log an informational message indicating that the agent is shutting down
     finally:
         agent.destroy_node() # Clean up and destroy the ROS 2 Node instance
-        rclpy.shutdown()     # Shutdown the ROS 2 Python client library (for the single agent terminal)
+        # rclpy.shutdown()     # Shutdown the ROS 2 Python client library (for the single agent terminal)
 
 if __name__ == "__main__": main()

@@ -27,6 +27,11 @@ class Rviz2Node(Node):
         self.agentsCurrentStates = {}   # Dictionary: {agentID: currentState}
         self.agentsCurrentTargets = {}  # Dictionary: {agentID: currentTarget}
         self.currentBarycenter = None   # Current barycenter value
+        
+        # Variables for tracking simulation end
+        self.endedAgentsAmount = 0      # Counter for agents that have sent termination signal
+        self.seenAgents = set()         # Set of agent IDs we've already seen
+        self.N = None                   # Total number of agents (determined at runtime)
 
         # Create static transform broadcaster (to establish TF Tree - Transform Tree - for RViz2 frame compatibility)
         self.TFbroadcaster = StaticTransformBroadcaster(self)
@@ -83,9 +88,21 @@ class Rviz2Node(Node):
         agentID = int(msg.data[0])   # Extract agent ID from the message
         iteration = int(msg.data[1]) # Extract iteration number (k)
 
+        if agentID not in self.seenAgents: # Track agents amount (N) dynamically at runtime
+            self.seenAgents.add(agentID)   # Add agent to seen agents set
+            self.N = len(self.seenAgents)  # Update total number of agents
+
         # Check if this is a termination message
-        if iteration == EndType.END.value: # Check if this is a termination message (iteration = -1)
-            return                         # Skip the message processing if it is a termination message
+        if iteration == EndType.END.value:       # Check if this is a termination message (iteration = -1)
+            self.endedAgentsAmount += 1          # Increment the endedAgentsAmount counter
+            if self.N is not None and self.endedAgentsAmount == self.N: # Check if all agents have sent their end signal
+                self.get_logger().info(f"All {self.N} agents completed: shutting down the RViz2 visualizer")
+                raise SystemExit
+            return # Early return to avoid processing the termination message as regular data
+        
+        if iteration == EndType.ERROR.value: # Check if this is an error message (iteration = -2)
+            self.get_logger().error(f"Agent {agentID} reported an error - terminating RViz2 visualizer")
+            raise SystemExit
 
         # Extract state (indices 2-3)
         state = [float(msg.data[2]), float(msg.data[3])]
@@ -172,9 +189,11 @@ class Rviz2Node(Node):
 
 # Main function to be used to run the Rviz2 Node
 def main(args=None):
-    rclpy.init(args=args)    # Initialize the ROS 2 Python client library (with also optional command line arguments)
-    visualizer = Rviz2Node() # Create an instance of the Rviz2 Node
+    rclpy.init(args=args)       # Initialize the ROS 2 Python client library (with also optional command line arguments)
+    visualizer = Rviz2Node()    # Create an instance of the Rviz2 Node
     try: rclpy.spin(visualizer) # Enter a loop that keeps the Rviz2 Node alive (AKA spinning it)
+    except KeyboardInterrupt:
+        print("RViz2 visualizer interrupted by user (Ctrl+C)")
     finally:
         visualizer.destroy_node() # Clean up and destroy the ROS 2 Node instance
         if __name__ == '__main__': rclpy.shutdown() # Shutdown only when run directly
