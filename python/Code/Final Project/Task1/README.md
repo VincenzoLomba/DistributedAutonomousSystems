@@ -19,4 +19,4 @@ Here is a short description of the other files included in Task 1:
 
 ---
 
-*For further insights into the system's behavior and performance, please refer to the Final Report.*
+*For further insights into the system's behavior and performance, please refer to comments and descriptions included within each file and/or to the Final Report.*
