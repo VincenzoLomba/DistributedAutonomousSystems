@@ -304,7 +304,7 @@ def main(args=None):
     try:
         agent.log(f"Starting...", agent.LogType.INFO)      # Log an informational message indicating that agent i (of id=i) is starting up
         # time.sleep(1 + agent.id * 0.2)                   # Optional staggered startup delay based on agent ID
-        #time.sleep(1)                                      # Wait for a second to ensure all nodes are ready (this is useful to avoid issues with message passing at startup)
+        time.sleep(1)                                      # Wait for a second to ensure all nodes and topics are ready (this is useful to avoid issues at startup)
         rclpy.spin(agent)                                  # Enter a loop that keeps the Agent Node alive (AKA spinning it)
     except (SystemExit, KeyboardInterrupt):                # Catch SystemExit and/or KeyboardInterrupt exceptions (to handle and allow a graceful shutdown)
         agent.log("Shutting down...", agent.LogType.INFO)  # Log an informational message indicating that the agent is shutting down
