@@ -5,7 +5,6 @@ import networkx as nx
 
 # Definition of a very simple enumerative type for the various graph possible types
 class GraphType(Enum):
-    RGG = "RGG"
     ERDOS_RENYI = "erdos-renyi"
     CYCLE = "cycle"
     PATH = "path"
@@ -53,3 +52,32 @@ def generateCommunicationGraph(N, graphType=GraphType.ERDOS_RENYI, pERG=0.6):
             A[i, i] = 1 - np.sum(A[i, :])
         
         return A
+
+def getOptimalGraphLayout(G, graphType):
+    """
+    Determines the optimal layout for visualizing the graph based on its type.
+    Arguments of the method:
+    - G: NetworkX graph object
+    - graphType: type of the communication graph (GraphType enum)
+    Method returns: position dictionary for the nodes
+    """
+    nodesAmount = len(G)
+    if graphType == GraphType.CYCLE:
+        return nx.circular_layout(G)
+    elif graphType == GraphType.PATH:
+        # Use circular layout for path graphs as well also for path graphs
+        return nx.circular_layout(G)
+    elif graphType == GraphType.COMPLETE:
+        return nx.spring_layout(G, k=2, iterations=50, seed=42)
+    elif graphType == GraphType.ERDOS_RENYI:
+        return nx.spring_layout(G, k=2, iterations=50, seed=42)
+    elif graphType == GraphType.STAR:
+        # Place center node at origin, others in circle around it
+        pos = {0: (0, 0)}  # Assume node 0 is the center
+        for i in range(1, nodesAmount):
+            angle = 2 * np.pi * (i-1) / (nodesAmount-1)
+            pos[i] = (2 * np.cos(angle), 2 * np.sin(angle))
+        return pos
+    else:
+        # Default fallback for unknown graph types
+        return nx.spring_layout(G, k=2, iterations=50, seed=42)

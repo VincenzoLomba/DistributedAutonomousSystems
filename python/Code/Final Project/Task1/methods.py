@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import networkx as nx
 import logger
+from simulations import GraphType
 
 def gradientTrackingMethod(A, stepsize, localCostFunctions, decisionVariableInitialValue, maxIters, tolerance):
     """
@@ -111,7 +112,7 @@ class GTMSolution:
         self.N = N
         self.decisionVariableDimension = decisionVariableDimension
 
-    def visualizeResults(self, d, optimalSolution, agentPositions = None):
+    def visualizeResults(self, d, optimalSolution, graphType, agentPositions = None):
         """ 
         Visualizes the results of the Gradient Tracking Method (GTM).
         When using for the Task 1.2, d has to be interpreted as the dimension of the space in which agents and targets are defined.
@@ -121,6 +122,11 @@ class GTMSolution:
         of dimension (N, d), containing the fixed positions of the agents in the of-dimension-d space.
         Of the other end, for general purposes (as it is for Task 1.1) d is the dimension of the decision variable
         of the whole (distributed) optimization problem itself, with 'optimalSolution' beeing of shape (1, d).
+        Arguments of the method:
+        - d: dimension parameter as described above
+        - optimalSolution: optimal solution as described above
+        - graphType: type of the communication graph (GraphType enum), required parameter
+        - agentPositions: positions of agents (required for Task 1.2 and RGG graphs)
         """
 
         T = self.decisionVariableDimension // d
@@ -189,7 +195,7 @@ class GTMSolution:
         # Second set of plots: communication graph
         plt.figure(figsize=(7, 7))
         G = nx.from_numpy_array(self.A)
-        pos = nx.spring_layout(G, seed=42, k=2, iterations=50) # a nice layout for better node positioning
+        pos = self.getOptimalGraphLayout(G, graphType, agentPositions) # Use the new optimal layout method with graph type and agent positions
         # Draw nodes
         nx.draw_networkx_nodes(G, pos, node_color='lightblue', node_size=800, edgecolors='black', linewidths=2)
         # Draw edges (with thickness proportional to weights)
@@ -336,6 +342,46 @@ class GTMSolution:
             '''
             
         plt.show()
+
+    def getOptimalGraphLayout(self, G, graphType, agentPositions=None):
+        """
+        Determines the optimal layout for visualizing the graph based on its type.
+        Arguments of the method:
+        - G: NetworkX graph object
+        - graphType: type of the communication graph (GraphType enum)
+        - agentPositions: positions of agents (required for RGG graphs), shape (N, d)
+        Method returns: position dictionary for the nodes
+        """
+        nodesAmount = len(G)
+        if graphType == GraphType.RGG:
+            # For RGG graphs, use the actual agent positions IFF available and exactly 2D
+            if agentPositions is not None and len(agentPositions) > 0 and len(agentPositions[0]) == 2:
+                # Use the 2D positions directly
+                pos = {}
+                for i in range(nodesAmount): pos[i] = (agentPositions[i][0], agentPositions[i][1])
+                return pos
+            else:
+                # Fallback to spring layout if agentPositions not available or not exactly 2D
+                return nx.spring_layout(G, k=2, iterations=50, seed=42)
+        elif graphType == GraphType.CYCLE:
+            return nx.circular_layout(G)
+        elif graphType == GraphType.PATH:
+            # Use circular layout for path graphs as well also for path graphs
+            return nx.circular_layout(G)
+        elif graphType == GraphType.COMPLETE:
+            return nx.spring_layout(G, k=2, iterations=50, seed=42)
+        elif graphType == GraphType.ERDOS_RENYI:
+            return nx.spring_layout(G, k=2, iterations=50, seed=42)
+        elif graphType == GraphType.STAR:
+            # Place center node at origin, others in circle around it
+            pos = {0: (0, 0)}  # Assume node 0 is the center
+            for i in range(1, nodesAmount):
+                angle = 2 * np.pi * (i-1) / (nodesAmount-1)
+                pos[i] = (2 * np.cos(angle), 2 * np.sin(angle))
+            return pos
+        else:
+            # Default fallback for unknown graph types
+            return nx.spring_layout(G, k=2, iterations=50, seed=42)
     
 def adjacencyMatrixCheck(A):
     """ A simple check method for the properties of an adjacency matrix A."""

@@ -7,21 +7,17 @@ from simulations import generateCommunicationGraph, GraphType
 import numpy as np
 import logger
 
-def task1dot1():
+def task1dot1(Nlist, dlist, gTypes, stepsize, maxIterations, tolerance):
 
     logger.setActive("TASK1.1")
+    
+    # Input parameters validation
+    if len(Nlist) != len(dlist) or len(dlist) != len(gTypes):
+        raise ValueError(f"All input lists must have the same length. Instead, got: Nlist={len(Nlist)}, dlist={len(dlist)}, gTypes={len(gTypes)}")
 
     randomSeed = 42 # Set a random seed for reproducibility
     np.random.seed(randomSeed)
     logger.log("Random seed (for reproducibility) set to: " + str(randomSeed))
-
-    # Define parameters for the simulation
-    Nlist = [12, 17, 17]                                            # Number of agents for the simulation
-    dlist = [2, 3, 3]                                               # Dimension of agents' states
-    gTypes = [GraphType.RGG, GraphType.ERDOS_RENYI, GraphType.PATH] # Type of communication graph to be used
-    stepsize = 0.01                                                 # Stepsize to be used
-    maxIterations = 50000                                           # Maximum number of iterations for the simulation
-    tolerance = 1e-7                                                # Tolerance to be used for the convergence of the method
 
     # Defining a simple method to generate randomically a quadratic cost function
     def defineQuadraticCostFunction(dim):
@@ -53,24 +49,19 @@ def task1dot1():
         # logger.log(np.array2string(A, precision=2, suppress_small=True))
         simulationResult = gradientTrackingMethod(A, stepsize, agentsLocalCostFunctions, np.random.randn(N, d), maxIterations, tolerance)
         logger.log("Simulation completed, now visualizing results")
-        simulationResult.visualizeResults(d, optimalSolution.reshape((1, d)))
+        simulationResult.visualizeResults(d, optimalSolution.reshape((1, d)), gType)
         logger.newLine()
 
-def task1dot2():
+def task1dot2(Nlist, Tlist, dlist, gTypes, stepsize, maxIterations, tolerance, noiseStdDev):
 
     logger.setActive("TASK1.2")
+    
+    # Input parameters validation
+    if len(Nlist) != len(Tlist) or len(Tlist) != len(dlist) or len(dlist) != len(gTypes):
+        raise ValueError(f"All input lists must have the same length. Instead, got: Nlist={len(Nlist)}, Tlist={len(Tlist)}, dlist={len(dlist)}, gTypes={len(gTypes)}")
+    
     randomSeed = 32 # Choose a random seed for reproducibility
     logger.log("Random seed (for reproducibility) set to: " + str(randomSeed))
-
-    # Define parameters for the simulation
-    Nlist = [15, 17, 22]                                                   # Number of agents for the simulation
-    Tlist = [3, 3, 5]                                                      # Number of targets for the simulation
-    dlist = [2, 3, 3]                                                      # Dimension of agents' states
-    gTypes = [GraphType.ERDOS_RENYI, GraphType.ERDOS_RENYI, GraphType.RGG] # Type of communication graph to be used
-    stepsize = 0.0001                                                      # Stepsize to be used
-    maxIterations = 50000                                                  # Maximum number of iterations for the simulation
-    tolerance = 1e-8                                                       # Tolerance to be used for the convergence of the method
-    noiseStdDev = 0.2                                                      # Standard deviation of the noise to be added to the measurements of the targets' positions
 
     # Now looping through all the simulations of Task 1.2
     logger.newLine()
@@ -92,10 +83,33 @@ def task1dot2():
             tolerance
         )
         logger.log("Simulation completed, now visualizing results")
-        simulationResult.visualizeResults(d, simulation.targets, simulation.agentsPositions)
+        simulationResult.visualizeResults(d, simulation.targets, gType, simulation.agentsPositions)
         logger.newLine()
 
 if __name__ == "__main__":
+    
     logger.newLine()
-    task1dot1()
-    task1dot2()
+    
+    # Task1.1: define parameters for the simulation
+    # Notice that you can define a group of distinct simulations (in their N amount of agents, d agents states dimension, g graph types),
+    # distinct simulations to be run in sequence, one after the other!
+    Nlist = [12, 17, 17]                                            # Number of agents for the simulation
+    dlist = [2, 3, 3]                                               # Dimension of agents' states
+    gTypes = [GraphType.RGG, GraphType.ERDOS_RENYI, GraphType.PATH] # Type of communication graph to be used
+    stepsize = 0.01                                                 # Stepsize to be used
+    maxIterations = 50000                                           # Maximum number of iterations for the simulation
+    tolerance = 1e-7                                                # Tolerance to be used for the convergence of the method
+    task1dot1(Nlist, dlist, gTypes, stepsize, maxIterations, tolerance)
+
+    # Task1.2: define parameters for the simulation
+    # Notice that you can define a group of distinct simulations (in their N amount of agents, T amount of targets, d agents states dimension, g graph types),
+    # distinct simulations to be run in sequence, one after the other!
+    Nlist = [15, 17, 22]                                                   # Number of agents for the simulation
+    Tlist = [3, 3, 5]                                                      # Number of targets for the simulation
+    dlist = [2, 3, 3]                                                      # Dimension of agents' states
+    gTypes = [GraphType.ERDOS_RENYI, GraphType.ERDOS_RENYI, GraphType.RGG] # Type of communication graph to be used
+    stepsize = 0.0001                                                      # Stepsize to be used
+    maxIterations = 50000                                                  # Maximum number of iterations for the simulation
+    tolerance = 1e-8                                                       # Tolerance to be used for the convergence of the method
+    noiseStdDev = 0.2                                                      # Standard deviation of the noise to be added to the measurements of the targets' positions
+    task1dot2(Nlist, Tlist, dlist, gTypes, stepsize, maxIterations, tolerance, noiseStdDev)

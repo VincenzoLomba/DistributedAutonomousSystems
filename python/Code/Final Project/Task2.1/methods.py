@@ -6,6 +6,7 @@ from matplotlib.animation import FuncAnimation # Used for creating animations of
 import logger                                  # Used as a custom logger
 from graphs import GraphType                   # Importing GraphType enum for defining communication graph types
 from graphs import generateCommunicationGraph  # Importing the custom function to be used to generate communication graphs
+from graphs import getOptimalGraphLayout       # Importing the function to get optimal graph layout
 import networkx as nx                          # Used for graph operations and manipulations (in the visualization part) 
 
 class Agent:
@@ -53,6 +54,7 @@ class AggregativeOptimizer:
         """
         self.agents = agents                                           # List of agents
         self.N = len(agents)                                           # Defining the amount of agents
+        self.graphType = graphType                                     # Store the graph type for visualization
         self.A = generateCommunicationGraph(self.N, graphType, pERG)   # Creating the communication graph (and getting its weighted adjacency matrix A)
         for i, agent in enumerate(self.agents):                        # Iterating over each agent
             agent.neighbors = list(np.nonzero(self.A[i])[0])           # Getting agent i neighbors indexes (corresponding to not-zero entries of row i of the weighted adjacency matrix)
@@ -222,7 +224,8 @@ class AggregativeOptimizer:
             'final_sigma': trueSigma,                                  # Final true σ(z) value
             'sigmas_estimates_history': sigmasEstimatesHistory,        # Sigma estimates history (for all agents)
             'A': self.A,                                               # Weighted adjacency matrix A (to be used for visualization purposes)
-            'targets': [agent.target for agent in self.agents]         # Targets of all agents (to be used for visualization purposes)
+            'targets': [agent.target for agent in self.agents],        # Targets of all agents (to be used for visualization purposes)
+            'graph_type': self.graphType                               # Graph type (to be used for visualization purposes)
         }
 
     def visualizeResults(self, results):
@@ -240,6 +243,7 @@ class AggregativeOptimizer:
                           - 'sigmas_estimates_history': Sigma estimates history (for all agents)
                           - 'A': Weighted adjacency matrix A (to be used for visualization purposes)
                           - 'targets': Targets of all agents (to be used for visualization purposes)
+                          - 'graph_type': Graph type (to be used for visualization purposes)
         """
         # Unpack results from the given dictionary
         costHistory = results['cost_history']
@@ -250,6 +254,7 @@ class AggregativeOptimizer:
         sigmasEstimatesHistory = results['sigmas_estimates_history']
         A = results['A']
         targets = np.array(results['targets'])
+        graphType = results['graph_type']
         
         # First set of plots: optimization metrics
         plt.figure(figsize=(15, 6)) # Create the Figure Object for the optimization metrics
@@ -288,7 +293,7 @@ class AggregativeOptimizer:
         try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
         except: pass  # Ignore if window positioning is not supported
         G = nx.from_numpy_array(A)
-        pos = nx.spring_layout(G, seed=42, k=2, iterations=50) # a nice layout for better node positioning
+        pos = getOptimalGraphLayout(G, graphType)
         # Draw nodes
         nx.draw_networkx_nodes(G, pos, node_color='lightblue', node_size=800, edgecolors='black', linewidths=2)
         # Draw edges (with thickness proportional to weights)
@@ -313,13 +318,13 @@ class AggregativeOptimizer:
             try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
             except: pass  # Ignore if window positioning is not supported
             # Plot targets
-            plt.scatter(targets[:, 0], targets[:, 1], c='blue', s=100, label='Targets')          # Plot targets in blue
-            for i, target in enumerate(targets):                                                 # Iterate over each target
-                plt.text(target[0], target[1], f'T{i}', ha='center', va='center', color='white') # Add labels to targets
+            plt.scatter(targets[:, 0], targets[:, 1], c='blue', s=100, label='Targets')                      # Plot targets in blue
+            for i, target in enumerate(targets):                                                             # Iterate over each target
+                plt.text(target[0], target[1], f'T{i}', ha='center', va='center', color='white', fontsize=8) # Add labels to targets
             # Plot final positions
             plt.scatter([p[0] for p in finalPositions], [p[1] for p in finalPositions], c='red', s=100, label='Agents') # Plot final agent positions in red
             for i, pos in enumerate(finalPositions):                                                                    # Iterate over each final position
-                plt.text(pos[0], pos[1], f'A{i}', ha='center', va='center', color='white')                              # Add labels to final positions 
+                plt.text(pos[0], pos[1], f'A{i}', ha='center', va='center', color='white', fontsize=8)                              # Add labels to final positions 
                 plt.plot([pos[0], targets[i, 0]], [pos[1], targets[i, 1]], 'b--', alpha=0.3)                            # Draw dashed lines between each agent and its target
             # Plot barycenter
             plt.scatter(finalSigma[0], finalSigma[1], c='purple', s=200, marker='s', label='Barycenter') # Plot barycenter in purple, with proper label
@@ -383,7 +388,7 @@ class AggregativeOptimizer:
         targetScatters = []                  # List to hold target scatter objects
         for i, target in enumerate(targets): # Iterate over each target
             sc = ax.scatter(target[0], target[1], c='blue', s=100, label=f'Targets' if i == 0 else None) # Plot target positions in blue, with labels
-            ax.text(target[0], target[1], f'T{i}', ha='center', va='center', color='white')
+            ax.text(target[0], target[1], f'T{i}', ha='center', va='center', color='white', fontsize=7)
             targetScatters.append(sc) # Append target scatter object to the list
         
         # Create required dynamic elements
@@ -395,7 +400,7 @@ class AggregativeOptimizer:
         numAgents = len(targets)   # Get number of agents from targets list
         for i in range(numAgents): # Iterate over each agent
             dot = ax.scatter([], [], c='red', s=100, label=f'Agents' if i == 0 else None) # Create scatter object for agent positions in red
-            label = ax.text(0, 0, f'A{i}', ha='center', va='center', color='white')       # Create label object for agent positions
+            label = ax.text(0, 0, f'A{i}', ha='center', va='center', color='white', fontsize=7)       # Create label object for agent positions
             agentDots.append(dot)                                                         # Append agent scatter object to the list
             agentLabels.append(label)                                                     # Append agent label object to the list
             # Lines to targets

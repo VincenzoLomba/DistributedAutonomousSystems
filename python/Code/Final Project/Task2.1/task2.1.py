@@ -6,23 +6,14 @@ from methods import Agent, AggregativeOptimizer, GraphType
 import numpy as np
 import matplotlib.pyplot as plt
 
-if __name__ == "__main__": 
-    
+def task2dot1(N, L, d, graph, stepsize, maxIterations, tolerance):
+
     logger.newLine()
     logger.setActive("TASK2.1")
 
     randomSeed = 42 # Set a random seed for reproducibility
     np.random.seed(randomSeed)
     logger.log("Random seed (for reproducibility) set to: " + str(randomSeed))
-
-    # Define parameters for the simulation
-    N = 8                    # Number of agents in the multi-robot system
-    L = 10                   # Size of the area in which agents are placed (a square of side L with the bottom left corner at (0,0))
-    d = 2                    # Dimension of agents' states (in which targets are defined and agents are moving)
-    graph = GraphType.CYCLE  # Type of communication graph to be used 
-    stepsize = 0.01          # Stepsize to be used
-    maxIterations = 10000    # Maximum number of iterations for the simulation
-    tolerance = 1e-7         # Tolerance to be used for the convergence of the method
 
     # Create a list of Agent objects with random initial positions in the given area
     agents = [Agent(i, np.random.uniform(0, L, size=d)) for i in range(N)] 
@@ -48,3 +39,15 @@ if __name__ == "__main__":
     stateHistories = [agent.stateHistory for agent in agents]                                       # Extract state histories from agents
     anm = optimizer.animateResults(targets, stateHistories, framesInterval=50, showIterations=True) # Create the animation with animate_results method
     if anm: plt.show()                                                                              # Show the animation plot
+
+if __name__ == "__main__":
+
+    # Define parameters for the simulation
+    N = 8                    # Number of agents in the multi-robot system
+    L = 10                   # Size of the area in which agents are placed (a square of side L with the bottom left corner at (0,0))
+    d = 2                    # Dimension of agents' states (in which targets are defined and agents are moving)
+    graph = GraphType.CYCLE  # Type of communication graph to be used 
+    stepsize = 0.01          # Stepsize to be used
+    maxIterations = 10000    # Maximum number of iterations for the simulation
+    tolerance = 1e-7         # Tolerance to be used for the convergence of the method
+    task2dot1(N, L, d, graph, stepsize, maxIterations, tolerance)
