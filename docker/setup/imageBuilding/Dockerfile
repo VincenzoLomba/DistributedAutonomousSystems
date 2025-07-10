@@ -14,10 +14,11 @@ RUN groupadd -g 1000 ${DEV_NAME} && \
 # Creating the bridge folder
 RUN mkdir -p /home/${DEV_NAME}/${WS_NAME}
 
-# Installing NAV2
+# Installing ROS
 RUN apt-get update -q && \
     apt-get install -yq \
         ros-${ROS_DISTRO}-rqt-graph \
+		ros-${ROS_DISTRO}-rviz2 \
 #        ros-${ROS_DISTRO}-navigation2 \
 #        ros-${ROS_DISTRO}-nav2-bringup \
         python3-colcon-common-extensions \
@@ -47,6 +48,23 @@ RUN pip3 install -r /home/${DEV_NAME}/requirements.txt
 # Setting up useful aliases
 RUN echo 'PROMPT_DIRTRIM=1' >> /home/${DEV_NAME}/.bashrc
 RUN echo 'export ROS_DOMAIN_ID=100' >> /home/${DEV_NAME}/.bashrc
+
+# Installing libraries useful for rviz2 usage
+RUN apt update && apt install -y \
+  libxkbcommon-x11-0 \
+  libxcb-xinerama0 \
+  libxcb-xinput0 \
+  libxcb-icccm4 \
+  libxcb-image0 \
+  libxcb-randr0 \
+  libxcb-render-util0 \
+  libgl1-mesa-glx \
+  libgl1-mesa-dri \
+  libegl1-mesa \
+  libglu1-mesa \
+  libglvnd0 \
+  mesa-utils
+RUN pip uninstall -y setuptools_scm
 
 # Finalize
 WORKDIR /home/${DEV_NAME}/${WS_NAME}
