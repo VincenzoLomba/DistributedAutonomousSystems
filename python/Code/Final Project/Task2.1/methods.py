@@ -208,7 +208,8 @@ class AggregativeOptimizer:
                 break
             # Logging progress (every 2.5% of iterations)
             percentage = 0.025
-            if (k + 1) % (maxIterations//(1/percentage)) == 0:
+            percentageTargets = [int(maxIterations * p * percentage) for p in range(1, int(1/percentage) + 1)]
+            if (k + 1) in percentageTargets:
                 progress = ((k+1)/maxIterations)*100
                 logger.log(f"A.O. progress: {progress:.1f}% ({k + 1}/{maxIterations} iterations). Current gradient norm: {totalGradientNorm:.6f}")
 

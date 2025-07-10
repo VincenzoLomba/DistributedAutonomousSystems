@@ -1,5 +1,5 @@
 
-# Task2: a code that implements a multi-robot (AKA multi-agent) aggregative optimization algorithm with visualization and animation capabilities
+# Task2.1: a code that implements a multi-robot (AKA multi-agent) aggregative optimization algorithm with visualization and animation capabilities
 
 import logger
 from methods import Agent, AggregativeOptimizer, GraphType
@@ -20,8 +20,11 @@ if __name__ == "__main__":
     L = 10                   # Size of the area in which agents are placed (a square of side L with the bottom left corner at (0,0))
     d = 2                    # Dimension of agents' states (in which targets are defined and agents are moving)
     graph = GraphType.CYCLE  # Type of communication graph to be used 
+    stepsize = 0.01          # Stepsize to be used
+    maxIterations = 10000    # Maximum number of iterations for the simulation
+    tolerance = 1e-7         # Tolerance to be used for the convergence of the method
 
-    # Create a list of Agent objects with random initial positions in the area
+    # Create a list of Agent objects with random initial positions in the given area
     agents = [Agent(i, np.random.uniform(0, L, size=d)) for i in range(N)] 
     
     # Assign private targets to the various agents
@@ -33,7 +36,7 @@ if __name__ == "__main__":
     # Define an AggregativeOptimizer instance and use it to run the simulation of the multi-robot system
     optimizer = AggregativeOptimizer(agents, graph) # Create an instance of AggregativeOptimizer (with the list of agents and the communication graph type)
     logger.log(f"Starting simulation with N={N}, d={d}, graph type {graph}")
-    results = optimizer.simulate(maxIterations=10000, stepsize=0.01, tolerance=1e-7) # Run the multi-robot aggregative optimization problem
+    results = optimizer.simulate(maxIterations, stepsize, tolerance) # Run the multi-robot aggregative optimization problem
 
     # Visualize results
     logger.log("Simulation completed, now visualizing results")

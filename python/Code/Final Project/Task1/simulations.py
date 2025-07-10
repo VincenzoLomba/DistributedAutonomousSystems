@@ -7,7 +7,7 @@ import logger
 # Definition of a very simple enumerative type for the various graph possible types
 class GraphType(Enum):
     RGG = "RGG"
-    ERDOS_RENYI = "erdos-Renyi"
+    ERDOS_RENYI = "erdos-renyi"
     CYCLE = "cycle"
     PATH = "path"
     STAR = "star"

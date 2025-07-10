@@ -1,7 +1,7 @@
 
-# Importing necessary libraries
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import networkx as nx
 import logger
 
@@ -72,7 +72,8 @@ def gradientTrackingMethod(A, stepsize, localCostFunctions, decisionVariableInit
             break
         # Logging progress (every 2.5% of iterations)
         percentage = 0.025
-        if (k + 1) % (maxIters//(1/percentage)) == 0:
+        percentageTargets = [int(maxIters * p * percentage) for p in range(1, int(1/percentage) + 1)]
+        if (k + 1) in percentageTargets:
             progress = ((k+1)/maxIters)*100
             logger.log(f"G.T.M. progress: {progress:.1f}% ({k + 1}/{maxIters} iterations). Current gradient norm: {np.linalg.norm(totalGradient[k]):.6f}")
 
@@ -128,8 +129,6 @@ class GTMSolution:
         # First set of plots: optimization metrics
         plt.figure(figsize=(13, 7))
         plt.gcf().canvas.manager.set_window_title("Optimization Metrics")
-        try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
-        except: pass  # Ignore if window positioning is not supported
         
         # Define a 1x3 grid for subplots and select the first one: total cost
         plt.subplot(1, 3, 1)
@@ -189,8 +188,6 @@ class GTMSolution:
 
         # Second set of plots: communication graph
         plt.figure(figsize=(7, 7))
-        try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
-        except: pass  # Ignore if window positioning is not supported
         G = nx.from_numpy_array(self.A)
         pos = nx.spring_layout(G, seed=42, k=2, iterations=50) # a nice layout for better node positioning
         # Draw nodes
@@ -217,14 +214,10 @@ class GTMSolution:
             if d == 2:
                 fig = plt.figure(figsize=(7, 7))
                 fig.canvas.manager.set_window_title("Map")
-                try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
-                except: pass  # Ignore if window positioning is not supported
                 ax = fig.add_subplot(111) # 111: subplot with 1 row, 1 column, select 1st subplot
             else:
                 fig = plt.figure(figsize=(7, 7))
                 fig.canvas.manager.set_window_title("Map")
-                try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
-                except: pass  # Ignore if window positioning is not supported
                 ax = fig.add_subplot(111, projection='3d') # for 3D plotting
 
             # Plotting the various agents
@@ -278,12 +271,10 @@ class GTMSolution:
             ax.legend()
             plt.title('Final Target Estimates with Error Vectors')
 
-        # Fourth set of plots: evolution of estimates and errors (for each target)
+        # 3. Fourth set of plots: evolution of estimates and errors (for each target)
         for index in range(T):
             
             fig, axes = plt.subplots(1, d, figsize = (5*d, 5))
-            try: plt.get_current_fig_manager().window.wm_geometry("+10+10")  # Position window at (10, 10)
-            except: pass  # Ignore if window positioning is not supported
             if d == 1: axes = [axes]  # This ensures axes is iterable even for d=1
             if T > 1: 
                 plt.suptitle(f'Target {index} Estimate Evolution (for all agents)')
@@ -318,8 +309,6 @@ class GTMSolution:
             '''
             # Repeat all the above plots BUT in error form (i.e., currentEstimate - trueValue)
             fig, axes = plt.subplots(1, d, figsize = (5*d, 5))
-            try: fig.canvas.manager.window.move(10, 10)
-            except: pass
             if d == 1: axes = [axes]  # This ensures axes is iterable even for d=1
             if T > 1: 
                 plt.suptitle(f'Target {index} Estimate Error Evolution (for all agents)')
