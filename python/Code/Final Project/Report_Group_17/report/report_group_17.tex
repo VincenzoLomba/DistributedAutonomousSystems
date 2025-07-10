@@ -1,0 +1,785 @@
+%
+% Template for DAS course projects
+%
+\documentclass[a4paper,11pt,oneside]{book}
+\usepackage[latin1]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb,amsmath,color}
+\usepackage{cite}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsthm}
+
+% Theorem-like environments
+\newtheorem{definition}{Definition}[section]  % For definitions
+\newtheorem{lemma}{Lemma}[section]           % For lemmas
+\newtheorem{remark}{Remark}[section]         % For remarks
+\newtheorem{theorem}{Theorem}[section] % For theorems
+
+% Style the environments
+\theoremstyle{definition}  % Bold title, roman body
+\theoremstyle{plain}       % Bold title, italic body (default for lemma)
+\theoremstyle{remark}      % Italic title, roman body
+
+% page settings
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage[hidelinks]{hyperref}
+
+\begin{document}
+\pagestyle{plain}
+
+
+%%%%%%%%%%% Cover %%%%%%%%%%%
+\thispagestyle{empty}                                                 
+\begin{center}                                                            
+    \vspace{5mm}
+    {\LARGE UNIVERSIT\`A DI BOLOGNA} \\                       
+      \vspace{5mm}
+\end{center}
+\begin{center}
+  \includegraphics[scale=.27]{figs/logo_unibo}
+\end{center}
+\begin{center}
+      \vspace{5mm}
+      {\LARGE School of Engineering} \\
+        \vspace{3mm}
+      {\Large Master Degree in Automation Engineering} \\
+      \vspace{20mm}
+      {\LARGE Distributed Autonomous Systems} \\
+      \vspace{5mm}{\Large\textbf{DAS Project}}                  
+      \vspace{15mm}
+\end{center}
+\begin{flushleft}                                                                              
+     {\large Professors: \\
+\textbf{Giuseppe Notarstefano} \\
+\textbf{Ivano Notarnicola}} \\       
+      \vspace{13mm}
+\end{flushleft}
+\begin{flushright}
+      {\large Students:}\\
+      \textbf{Davide Zarabini}\\
+      \textbf{Vincenzo Lombardi}\\
+      \textbf{Vittorio Caputo}
+\end{flushright}        %capoverso allineato a destra
+\begin{center}
+\vfill
+      {\large Academic year \@2024/2025} \\
+\end{center}
+
+
+
+\newpage
+\thispagestyle{empty}
+
+%%%%%%%%%%% Abstract %%%%%%%%%%%%
+\begin{center}
+\chapter*{}
+\thispagestyle{empty}
+{\Huge \textbf{Abstract}}\\
+\vspace{15mm}
+\end{center}
+This project develops \textbf{distributed optimization algorithms} for multi-robot systems, focusing on two main tasks. \textbf{Task 1} solves a \textbf{distributed consensus optimization problem} for multi-robot target localization, where robots estimate target positions through noisy distance measurements using the \textbf{Gradient Tracking Algorithm}. \textbf{Task 2} addresses an \textbf{aggregative optimization problem} where robots balance between reaching private targets and maintaining swarm cohesion through the \textbf{Aggregative Tracking Method}.\\\\
+The project combines theoretical problem formulation, algorithm development, and practical implementation using both Python and ROS~2. Simulations and real-time visualizations validate the effectiveness of the proposed methods, with performance metrics such as total gradient norm, total cost and estimation accuracy.
+
+\tableofcontents\thispagestyle{empty}
+\listoffigures\thispagestyle{empty}
+\listoftables  % This generates the List of Tables
+
+%%%%%%%%%% Introduction %%%%%%%%%%
+\chapter*{Introduction}
+\addcontentsline{toc}{chapter}{Introduction}
+\section*{Introduction}
+
+This report presents the development and implementation of \textbf{distributed optimization algorithms} for \textbf{multi-robot systems}, focusing on two key tasks: \textbf{distributed consensus optimization} for target localization and \textbf{aggregative optimization}. These tasks are explored within the broader context of enabling decentralized coordination in robotic networks, where agents must operate with limited information and communication capabilities.\\\\
+In \textbf{Task 1}, we address the problem of \textbf{cooperative target localization}, where a team of robots estimates the positions of static targets using noisy distance measurements. The \textbf{Gradient Tracking Algorithm} is employed to solve this distributed consensus optimization problem, ensuring that robots collaboratively converge to an accurate estimate of the target positions. This task highlights fundamental challenges in multi-agent estimation under uncertainty, emphasizing the importance of efficient information fusion and convergence guarantees in distributed systems.\\\\
+In \textbf{Task 2}, we tackle an \textbf{aggregative optimization problem}, where robots must balance between reaching their \textbf{private targets} and maintaining swarm \textbf{cohesion} to satisfy communication constraints. The \textbf{Aggregative Tracking Method} is implemented to solve this problem, enabling each robot to dynamically adjust its trajectory based on local cost functions and estimates of the team barycenter. This task showcases how trade-offs between individual objectives and global coordination can be managed through algorithmic design.\\\\
+The project encompasses \textbf{theoretical formulation}, \textbf{algorithm design}, and practical \textbf{implementation} in both \textbf{Python} and \textbf{ROS~2}, providing a comprehensive evaluation of the proposed solutions. Simulation environments and real-time visualization tools are employed to monitor the behavior of the robotic team, analyze convergence trends, and assess algorithm performance. Key contributions include the development of efficient distributed algorithms, simulation-based validation, and real-time visualization of multi-robot coordination. The results demonstrate the effectiveness of the proposed methods in achieving distributed optimization goals, highlighting their potential for real-world applications in autonomous systems, such as surveillance, exploration, and environmental monitoring.\\\\
+The remainder of this report is structured as follows:
+
+\begin{itemize}
+    \item \textbf{Chapter 1} details Task~1, including problem formulation, the Gradient Tracking Algorithm, Python implementation and results.
+    \item \textbf{Chapter 2} covers Task~2, including problem formulation, the Aggregative Tracking Method, Python and ROS~2 implementation and results.
+    \item \textbf{Conclusions} summarize the findings and discuss future directions.
+    \item \textbf{Appendix} contains basic definitions and properties of graph theory.
+\end{itemize}
+
+\section*{Contributions}
+This work makes the following key contributions to distributed multi-robot systems:
+\begin{itemize}
+    \item \textbf{Implementation and validation} of two distributed optimization algorithms:
+    \begin{itemize}
+        \item Gradient Tracking for consensus-based target localization (Task 1)
+        \item Aggregative Tracking for agents coordination (Task 2)
+    \end{itemize}
+    
+    \item \textbf{Comprehensive evaluation framework} including:
+    \begin{itemize}
+        \item Cost function convergence analysis
+        \item Gradient norm reduction metrics
+        \item Consensus error measurements
+        \item Real-time visualization tools
+    \end{itemize}
+    
+    \item \textbf{Practical implementation} in both Python and ROS 2 environments
+    
+    \item \textbf{Theoretical-practical synthesis} connecting algorithm design with:
+    \begin{itemize}
+        \item Graph theory fundamentals
+        \item Convergence Results
+    \end{itemize}
+\end{itemize}
+
+
+%%%%%%%%%% Chapter Titles %%%%%%%%%%
+
+%%%%%%%%%% Chapter 1 %%%%%%%%%%
+\chapter{Task 1: Multi-Robot Target Localization}
+\section{Introduction}
+Task 1 focuses on distributed consensus optimization and is composed of two subtasks. \textbf{Task 1.1} addresses the \textbf{distributed consensus optimization} of a \textbf{quadratic function} as a preliminary step. \textbf{Task 1.2} involves \textbf{cooperative target localization}, where robots collaboratively estimate the positions of static targets based on noisy distance measurements.
+In particular, we consider a team of $N$ robots with positions $p_i \in \mathbb{R}^d$ ($i = 1,\dots,N$) collaborates to estimate the positions of $N_T$ static targets $z_\tau \in \mathbb{R}^d$ ($\tau = 1,\dots,N_T$). Each robot $i$ obtains noisy distance measurements $d_{i\tau} \geq 0$ to target $\tau$.
+
+\section{Distributed Consensus Optimization Problem}
+\subsection{Problem Setting}
+\label{subsec:PS1.1}
+The \textbf{Task 1.1} scenario can be formalized as follows:
+\begin{equation*}
+    \min_{z \in \mathbb{R}^d} \sum_{i=1}^N \ell_i(z),
+\end{equation*}
+where each local cost function $\ell_i(z)$ is a strongly convex quadratic function defined as:
+\begin{equation*}
+    \ell_i(z) = \frac{1}{2} z^\top Q_i z + b_i^\top z,
+\end{equation*}
+with $Q_i \in \mathbb{R}^{d \times d}$ a symmetric \textbf{positive definit} matrix, and $b_i \in \mathbb{R}^d$ a vector. These properties ensure that each $\ell_i(z)$ has a \textbf{unique minimizer} and is differentiable, with gradient:
+\begin{equation*}
+    \nabla \ell_i(z) = Q_i z + b_i.
+\end{equation*}
+In practice, the matrix $Q_i$ is constructed as:
+\begin{equation*}
+    Q_i = A_i^\top A_i + \lambda \cdot I_d,
+\end{equation*}
+where $A_i \in \mathbb{R}^{d \times d}$ is a randomly generated matrix, $I_d$ is the $d \times d$ identity matrix, and $\lambda > 0$ is a small scalar added to ensure that $Q_i$ is positive definite. This construction ensures that $Q_i$ is symmetric and positive definite. The vector $b_i$ is also randomly sampled, typically from a Gaussian distribution.
+Each robot $i$ has access only to its own local cost function $\ell_i(z)$, and the goal is to collaboratively compute a common decision variable $z$ that minimizes the global objective.\\\\
+On the other hand, the \textbf{Task 1.2} scenario addresses the cooperative localization of multiple static targets by a team of robots. It can be formalized as the following optimization problem:
+\begin{equation*}
+    \min_{z \in \mathbb{R}^{dN_T}} \sum_{i=1}^N \ell_i(z),
+\end{equation*}
+where each local cost function $\ell_i(z)$ models the discrepancy between the actual and predicted distance measurements of robot $i$ to the targets:
+\begin{equation*}
+    \ell_i(z) = \sum_{\tau=1}^{N_T} \left( d_{i\tau}^2 - \|z_\tau - p_i\|^2 \right)^2.
+\end{equation*}
+and the local gradient is given by:
+\begin{equation*}
+\nabla \ell_i(z) = [-4(d_{i1}^2-\|z_1-p_i\|^2)(z_1-p_i),..., -4(d_{iN_T}^2-\|z_{N_T}-p_i\|^2)(z_{N_T}-p_i)]^{T}
+\end{equation*}
+The term $\|z_\tau - p_i\|^2$ in the cost represents the squared Euclidean distance between robot $i$ and target $\tau$, and each robot aims to minimize the squared error between the measured squared distance $d_{i\tau}^2$ and the predicted squared distance.
+Each robot $i$ knows only its own position $p_i$ and its local distance measurements $\{d_{i\tau}\}_{\tau=1}^{N_T}$ to the targets. Consequently, each robot can compute only its own local cost function $\ell_i(z)$ and does not have access to the full objective. Therefore, the robots must collaborate in a distributed manner to collectively estimate the global variable $z$, which encodes the positions of all targets.
+
+
+
+\subsection{Gradient Tracking Algorithm}
+In order to solve the described Distributed Consensus Optimization Problems in a distributed way, we can use the Gradient Tracking Method:
+\begin{align*}
+    z_i^{k+1} &= \sum_{j \in \mathcal{N}_i} a_{ij} z_j^k - \alpha s_i^k \quad z_i^0 \in \mathbb{R}^d, \\
+    s_i^{k+1} &= \sum_{j \in \mathcal{N}_i} a_{ij} s_j^k + \nabla \ell_i(z_i^{k+1}) - \nabla \ell_i(z_i^k) \quad s_i^0 = \nabla \ell_i(z_i^0).
+\end{align*}
+
+where:
+\begin{itemize}
+    \item $z_i^k$ is the solution estimate of agent $i$ at iteration $k$,
+    \item $s_i^k$ is the gradient tracking variable of agent $i$ at iteration $k$, estimate of the true total gradient $\frac{1}{N}\sum_{h=1}^N \nabla \ell_h(z_h^k)$,
+    \item $\mathcal{N}_i$ is the set of neighbors of agent $i$ in the \textbf{strongly connected} (or connected if undirected) and \textbf{aperiodic} communication graph $\mathcal{G}$,
+    \item $a_{ij}$ are the weights of the \textbf{doubly stochastic} adjacency matrix $A$,
+    \item $\alpha > 0$ is the step-size,
+    \item $\nabla \ell_i$ is the gradient of the local cost function $\ell_i$.
+\end{itemize} \vspace{3mm}
+The Gradient Tracking (GT) can be considered an improvement of the Distributed Gradient Method (DG). In fact, to update $z_i^k$, an average of neighbor states is considered as in the DG, while the update direction, that in DG is always a wrong direction with respect the true total gradient direction, in GT converges to the true total gradient direction. Each agent has a local estimates $s_i^k$ of the true gradient direction that is updated according to dynamic average consensus protocol that takes into account the average of neighbor estimates $s_j^k$ and an innovation term that considers the variation in time of the local gradient. Important to notice that the inizialization for $s_i$ is not arbitrary and it's important to set $s_i^0 = \nabla \ell_i(z_i^0)$ for convergence. 
+\begin{theorem}[Convergence of Gradient Tracking Method]
+\label{thm:gradient_tracking_convergence}
+Consider the Gradient Tracking Method applied to problem $\min_z \sum_{i=1}^N \ell_i(z)$ under the following assumptions:
+\begin{itemize}
+    \item Communication graph $\mathcal{G}$ is strongly connected and aperiodic
+    \item Weight matrix $A = [a_{ij}]$ is doubly stochastic with $a_{ii} > 0$
+    \item Each $\ell_i:\mathbb{R}^d \rightarrow \mathbb{R}$ is $\mu$-strongly convex
+    \item Each $\nabla\ell_i$ is $L$-Lipschitz continuous
+\end{itemize}
+Then, there exists $\alpha^* > 0$ such that for all step-sizes $\alpha \in (0,\alpha^*)$, the algorithm achieves:
+\begin{enumerate}
+    \item Exact convergence to the optimal solution:
+    \[\lim_{k\to\infty} \|z_i^k - z^*\| = 0 \quad \forall i = 1,\ldots,N\]
+    
+    \item Linear convergence rate:
+    \[\|z_i^k - z^*\| \leq \rho^k \|z_i^0 - z^*\| \quad \forall i, \exists \rho \in (0,1)\]
+\end{enumerate}
+where $z^*$ is the unique minimizer of $\sum_{i=1}^N \ell_i(z)$.
+\end{theorem}
+
+
+
+
+\section{Python Implementation}
+The Python implementation simulates a multi-robot target localization system performing distributed optimization using a gradient tracking algorithm.\\\\
+The main elements are described below:\\\\
+\textbf{TLSimulation Class}
+\begin{itemize}
+    \item \textbf{Primary Function:}
+It creates the setting for task 1.2 target localization
+    \item \textbf{Key Features:}
+\begin{itemize}
+    \item \textbf{Robots and targets generation:} It creates random positions $p_i$ for each of the $N$ agents according to uniform distribution and it generates noise distances $d_{i\tau}$ between each agent $i$ and target $\tau$ considering a Gaussian noise added to the true distance
+    
+    \item \textbf{Communication Graph Generation:}  Creates \textbf{undirected}, \textbf{connected} and \textbf{aperiodic} graphs (RGG, Erd\H{o}s--R\'enyi, cycle, star, path, or complete) with \textbf{Metropolis-Hastings} weights for \textbf{doubly stochastic} weighted adjacency matrices to guarantee convergence. In particular, the Random Geometric Graph (RGG) is a graph based on distances among agents. Agent $j$ is a neighbor of agent $i$ only if the distance between them is less or equal than a certain defined communication radius
+    
+    \item \textbf{Local Cost Functions:} Provides individual cost functions for each agent based on squared error between measured and estimated distances and returns also the related gradient (there's also another method to generate random quadratic cost functions for task 1.1 as described in subsection~\ref{subsec:PS1.1})
+    
+    \item \textbf{Initialization:} Generates initial guesses for the local estimates $z_i$ of target positions for each agent. Considering that $z_i = [z_{i1},...,z_{iN_T}]^T$, all elements of $zi$ are initialized to the position $p_i$ of agent $i$
+\end{itemize}
+\end{itemize}
+\textbf{Gradient Tracking Method}\\
+It implements the Gradient Tracking Method with a certain number of defined maximum iterations and a stopping criterion based on the norm of the total gradient (sum of local gradients) to be below a defined threshold ($10^{-7}$) with proper initialization.\\\\
+\textbf{Visualization}
+\begin{itemize}
+    \item \textbf{Total Cost:} Plots the evolution of the sum of all local cost functions over iterations. Uses logarithmic scale for task 1.2 and natural scale for task 1.1 to visualize convergence behavior.
+    
+    \item \textbf{Total Gradient Norm:} Displays the 2-norm of the sum of all local gradients in logarithmic scale, providing insight into the convergence rate and stopping criterion satisfaction.
+    
+    \item \textbf{Total Consensus Error:} Shows the sum of distances from each agent's state to the average state across all agents in logarithmic scale, measuring how well agents reach consensus.
+    
+    \item \textbf{Estimates Evolution:} For each target and each coordinate dimension, plots individual agent estimates over time, average estimate evolution, and true target position to visualize convergence to a consensual optimal solution.
+    
+    \item \textbf{Communication Graph:} Renders the network topology using NetworkX with nodes representing agents, edges showing communication links for visualization of the distributed system structure.
+
+    \item \textbf{Spatial Map (2D/3D):} In task 1.2, it creates a spatial visualization showing agent locations, true target positions, estimated target positions, and error vectors connecting true and estimated positions.
+\end{itemize}
+
+\section{Results}
+In this section are reported the results of a set of simulations for task 1.1 and 1.2 with different communication graphs, number of agents, number of targets etc. to showcase the effectiveness of the implementation. For all simulations, the main plots, including total cost, gradient norm, and consensus error over iterations are presented. Additional plots are provided selectively for certain simulations to maintain brevity and avoid redundancy. In the table below, the main parameters of each simulation are summarized:
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Simulation} & \textbf{N (Agents)} & \textbf{N\textsubscript{T} (Targets)} & \textbf{d (Dimension)} & \textbf{Graph Type} \\
+\hline
+Sim 1 (task 1.1) & 12 & - & 2 & Erd\H{o}s--R\'enyi \\
+Sim 2 (task 1.1) & 17 & - & 3 & Path \\
+Sim 3 (task 1.2) & 15 & 3 & 2 & Cycle \\
+Sim 4 (task 1.2) & 17 & 3 & 3 & Star \\
+Sim 5 (task 1.2) & 22 & 5 & 3 & RGG \\
+\hline
+\end{tabular}
+\caption{Simulation parameters for task 1}
+\label{tab:sim-params}
+\end{table}
+\noindent Note that $d$ is the dimension of the decision variable $z$ in task 1.1, while it's the dimension of each target position $z_\tau$.
+\subsection{Task 1.1 Plots}
+\subsubsection{Simulation 1}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/mainplots_sim1.png}
+    \caption{Total Cost, Gradient Norm, Consensus Error over Iterations (sim 1)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/cons_sim1.png}
+    \caption{ Estimates Evolution over Iterations (sim 1)}
+\end{figure}
+\subsubsection{Simulation 2}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/mainplots_sim2.png}
+    \caption{Total Cost, Gradient Norm, Consensus Error over Iterations (sim 2)}
+\end{figure}
+\subsection{Task 1.2 Plots}
+\subsubsection{Simulation 3}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/mainplots_sim3.png}
+    \caption{Total Cost, Gradient Norm, Consensus Error over Iterations (sim 3)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/cons_targ0_sim3.png}
+    \caption{Position Estimate of Target 0 over Iterations (sim 3)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/cons_targ1_sim3.png}
+    \caption{Position Estimate of Target 1 over Iterations (sim 3)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/cons_targ2_sim3.png}
+    \caption{Position Estimate of Target 2 over Iterations (sim 3)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.7\textwidth]{figs/anim_sim3.png}
+    \caption{Spatial Plot of Agents and Targets (sim 3)}
+\end{figure}
+\subsubsection{Simulation 4}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/mainplots_sim4.png}
+    \caption{Total Cost, Gradient Norm, Consensus Error over Iterations (sim 4)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.7\textwidth]{figs/anim_sim4.png}
+    \caption{Spatial Plot of Agents and Targets (sim 4)}
+\end{figure}
+\subsubsection{Simulation 5}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/mainplots_sim5.png}
+    \caption{Total Cost, Gradient Norm, Consensus Error over Iterations (sim 5)}
+\end{figure}
+%%%%%%%%%% Chapter 2 %%%%%%%%%%
+\chapter{Task 2: Aggregative Optimization for Multi-Robot Systems}
+\section{Introduction}
+In \textbf{Task 2}, we consider a setting involving a team of $N$ robots operating in a two-dimensional environment ($d = 2$). Each robot $i$ is characterized by a position $z_i^k \in \mathbb{R}^2$ at iteration $k$. The collective state of the team is represented by the stacked vector $z^k = \text{col}(z_1^k, \ldots, z_N^k) \in \mathbb{R}^{2N}$.\\\\
+The goal of this task is to implement a \textbf{distributed control algorithm} that allows to:
+\begin{itemize}
+    \item Enable each robot to remain as \textbf{close as possible} to its own \textbf{private target}.
+    \item Keep the \textbf{fleet tight} due to communication constraints.
+\end{itemize}       
+This chapter covers the following aspects in detail: \textbf{algorithm design}, \textbf{cost function formulation}, \textbf{Python implementation}, \textbf{ROS 2 integration}, and \textbf{experimental results}.
+
+
+
+\section{Aggregative Optimization Problem}
+\subsection{Problem Setting}
+The task 2 scenario can be formalized as an \textbf{aggregative optimization problem} of the form:
+
+\begin{equation*}
+    \min_{z \in \mathbb{R}^{2N}} \sum_{i=1}^N \ell_i(z_i, \sigma(z)), \quad \text{where} \quad \sigma(z) = \frac{1}{N} \sum_{i=1}^N \phi_i(z_i).
+\end{equation*}
+Here, $\ell_i: \mathbb{R}^2 \times \mathbb{R}^2 \to \mathbb{R}$ is the \textbf{local cost function} of robot $i$, and $\phi_i: \mathbb{R}^2 \to \mathbb{R}^2$ defines its contribution to the \textbf{aggregative variable} $\sigma(z)$, which represents the \textbf{team's barycenter} (i.e., $\phi_i(z_i) = z_i$).
+
+\subsection{Local Cost Function Design}
+In order to accomplish the task 2, we considered the following \textbf{local cost function}:
+\begin{equation*}
+    \ell_i(z_i, \sigma(z)) = \gamma_i \left\| z_i - r_i \right\|^2 + \left\| \sigma(z) - z_i \right\|^2
+\end{equation*}
+The cost function consists of two terms: the first term encourages each robot to remain as \textbf{close as possible} to its own \textbf{private target}, while the second promotes robot \textbf{aggregation} toward their \textbf{barycenter} to keep the \textbf{feet tight}. A \textbf{trade-off} parameter $\gamma_i$ is introduced to balance the influence of individual goal tracking against the desire to maintain cohesion.
+
+
+
+\subsection{Aggregative Tracking Algorithm}
+In order to solve the described Aggregative Optimization Problem in a distributed way, we can use the \textbf{Aggregative Tracking Method}, that in brief is an extension of the Centralized Gradient Method through \textbf{Dynamic Average Consensus}:
+\begin{align*}
+    z_i^{k+1} &= z_i^k - \alpha \left( \nabla_1 \ell_i(z_i^k, s_i^k) + \nabla \phi_i(z_i^k) v_i^k \right) \quad z_i^0 \in \mathbb{R}^{n_i}, \\
+    s_i^{k+1} &= \sum_{j \in \mathcal{N}_i} a_{ij} s_j^k + \phi_i(z_i^{k+1}) - \phi_i(z_i^k) \quad s_i^0 = \phi_i(z_i^0), \\
+    v_i^{k+1} &= \sum_{j \in \mathcal{N}_i} a_{ij} v_j^k + \nabla_2 \ell_i(z_i^{k+1}, s_i^{k+1}) - \nabla_2 \ell_i(z_i^k, s_i^k) \quad v_i^0 = \nabla_2 \ell_i(z_i^0, s_i^0).
+\end{align*}
+
+where:
+\begin{itemize}
+    \item $z_i^k \in \mathbb{R}^{n_i}$ is the local state estimate of agent $i$ at iteration $k$,
+    \item $s_i^k \in \mathbb{R}^d$ is the local estimate of the aggregative variable $\sigma(z^k) = \frac{1}{N}\sum_{j=1}^N \phi_j(z_j^k)$ with $\phi_i: \mathbb{R}^{n_i} \to \mathbb{R}^d$,
+    \item $v_i^k \in \mathbb{R}^d$ is the local estimate of the average gradient $\frac{1}{N}\sum_{j=1}^N \nabla_2 \ell_j(z_j^k, \sigma(z^k))$,
+    \item $\mathcal{N}_i$ is the set of neighbors of agent $i$ in the \textbf{strongly connected} (or connected if undirected) and \textbf{aperiodic} communication graph $\mathcal{G}$,
+    \item $a_{ij}$ are the weights of the \textbf{doubly stochastic} adjacency matrix $A$,
+    \item $\alpha > 0$ is the constant step-size,
+    \item $\nabla_1 \ell_i$ is the gradient of $\ell_i$ with respect to its first argument ($z_i$),
+    \item $\nabla_2 \ell_i$ is the gradient of $\ell_i$ with respect to its second argument ($\sigma$),
+    \item $\nabla \phi_i$ is the gradient of $\phi_i$.
+\end{itemize}
+The Aggregative Tracking method is a distributed implementation of the Centralized Gradient Method (component-wise):
+\begin{equation*}
+    z_i^{k+1} = z_i^k - \alpha \left[ \nabla \ell(z^k) \right]_i
+\end{equation*}
+where:
+\[
+    [\nabla \ell(z^k)]_i = \nabla_1 \ell_i(z_i^k, \sigma(z^k)) + \frac{1}{N}\nabla \phi_i(z_i^k) \sum_{j=1}^N \nabla_2 \ell_j(z_j^k, \sigma(z^k)),
+\]
+where, according to the chosen cost function, the gradients are:
+\begin{itemize}
+  \item $\nabla_1 \ell_i(z_i^k, \sigma(z^k)) = 2\gamma_i (z_i^k - r_i) + 2(z_i^k - \sigma(z^k))$
+  \item $\nabla_2 \ell_j(z_j^k, \sigma(z^k)) = 2(\sigma(z^k) - z_j^k)$
+  \item $\nabla \phi_i(z_i) = \mathbf{I}_{n_i}$
+\end{itemize}
+The Aggregative Tracking Method simply replaces the global terms $\sigma(z^k)$ and $\frac{1}{N} \sum_{j=1}^N \nabla_2 \ell_j(z_j^k, \sigma(z^k))$ with the respective estimates $s_i^k$ and $v_i^k$ through dynamic average consensus: average of neighbor estimates plus an innovation term. Moreover, the initializations $s_i^0 = \phi_i(z_i^0)$ and $v_i^0 = \nabla_2 \ell_i(z_i^0, s_i^0)$ are not arbitrary and necessary for convergence. \\\\
+It's important to remark that in a distributed context, each agent $i$:
+\begin{itemize}
+    \item knows only $\ell_i$ and $\phi_i$
+    
+    \item maintains an estimate $z_i^k$ of $z_i^*$
+    
+    \item maintains an estimate $s_i^k$ of $\sigma(z^k) = \frac{1}{N} \sum_{j=1}^N \phi_j(z_j^k)$
+    
+    \item maintains an estimate $v_i^k$ of $\frac{1}{N} \sum_{j=1}^N \nabla_2 \ell_j(z_j^k, \sigma(z^k))$
+\end{itemize}
+
+\begin{theorem}[Convergence of Aggregative Tracking Method]
+\label{thm:aggregative_convergence}
+Consider the Aggregative Tracking Method applied to problem $\min_{z} \sum_{i=1}^N \ell_i(z_i,\sigma(z))$ with $\sigma(z) = \frac{1}{N}\sum_{j=1}^N \phi_j(z_j)$. Under the following assumptions:
+\begin{itemize}
+    \item Communication graph $\mathcal{G}$ is strongly connected and aperiodic
+    \item Weight matrix $A = [a_{ij}]$ is doubly stochastic
+    \item Global cost $\sum_{i=1}^N \ell_i(\cdot,\sigma(\cdot))$ is strongly convex
+    \item $\phi_i(\cdot)$ are differentiable with Lipschitz continuous gradients
+    \item Gradients $\nabla_1 \ell_i$, $\nabla_2 \ell_i$, and $\nabla\phi_i \nabla_2\ell_i$ are Lipschitz continuous
+\end{itemize}
+Then, there exists $\alpha^* > 0$ such that for all step-sizes $\alpha \in (0,\alpha^*)$, the algorithm achieves:
+\begin{equation*}
+\lim_{k\to\infty} \|z_i^k - z_i^*\| = 0 \quad \text{(linear rate)}
+\end{equation*}
+for all agents $i = 1,\ldots,N$, where $z^* = (z_1^*,...,z_N^*)$ is the optimal solution.
+\end{theorem}
+
+
+
+\section{Python Implementation}
+The Python implementation simulates a multi-robot system performing distributed optimization using an aggregative tracking algorithm.\\\\
+The main elements are described below:\\\\
+\textbf{Agent Class}\\
+Represents individual robot with some attributes, such as:
+\begin{itemize}
+    \item Current state position ($z_i^k$) and history across iterations
+    \item Private target positions ($r_i$)
+    \item Current barycenter estimate ($s_i^k$) and $\frac{1}{N} \sum_{j=1}^N \nabla_2 \ell_j(z_j^k, \sigma(z^k))$ estimate ($v_i^k$)
+    \item Tradeoff parameter ($\gamma_i$) for local cost function
+\end{itemize}
+\textbf{AggregativeOptimizer Class}\\
+Implements the distributed optimization algorithm with:
+\begin{itemize}
+    \item \textbf{Communication Graph Generation}: Creates \textbf{undirected}, \textbf{connected} and \textbf{aperiodic} graphs (Erd\H{o}s--R\'enyi, cycle, star, path, or complete) with \textbf{Metropolis-Hastings} weights for \textbf{doubly stochastic} weighted adjacency matrices to guarantee convergence
+    
+    \item \textbf{Aggregative Tracking Algorithm}: Allows each agent $i$ to converge to component $z_i^*$ of an optimum $z^*= [z_1^*,...,z_N^*]^\top $ of the total cost function $\sum_{i=1}^N \ell_i(z_i, \sigma(z))$. In particular, we considered an early \textbf{stopping  criterion} of the method based on a threshold ($10^{-7}$) applied to the \textbf{total gradient norm}. Additionally, Each agent's \textbf{initial state} is sampled \textbf{uniformly at random} from a square area, as:
+
+\[
+z_i^0 \sim \mathcal{U}(0, \text{area\_size})^2
+\]
+
+where:
+\begin{itemize}
+  \item \( z_i^0 \in \mathbb{R}^2 \) is the initial position of agent \( i \),
+  \item \( \mathcal{U}(0, \text{area\_size}) \) denotes a continuous uniform distribution over the interval \( [0, \text{area\_size}] \)
+\end{itemize} 
+The same was done for generating target positions.
+\end{itemize}
+\textbf{Visualization}
+\begin{itemize}
+    \item \textbf{Total Cost}: Semi-logarithmic plot showing the sum of all agents' local cost functions $\sum_i \ell_i(z_i^k, \sigma(z^k))$ over iterations
+    \item \textbf{Total Gradient Norm}: Defined as the Euclidean norm of the gradient of the global objective $\ell(z)$, where the full gradient is constructed by stacking the $N$ local components:
+    \[
+    \nabla \ell(z^k) = \text{col}\left( [\nabla \ell(z^k)]_1, \dots, [\nabla \ell(z^k)]_N \right) 
+    \]
+    Each local component is given by:
+    \[
+    [\nabla \ell(z^k)]_i = \nabla_1 \ell_i(z_i^k, \sigma(z^k)) + \frac{1}{N}\nabla \phi_i(z_i^k) \sum_{j=1}^N \nabla_2 \ell_j(z_j^k, \sigma(z^k)),
+    \]
+    and the total gradient norm is:
+    \[
+    \|\nabla \ell(z^k)\| = \left\| \text{col}\left( [\nabla \ell(z^k)]_1, \dots, [\nabla \ell(z^k)]_N \right) \right\|.
+    \]
+    \item \textbf{Total Sigma Estimation Error}: Semi-logarithmic plot showing the total estimation error $\sum_i \|s_i^k - \sigma(z^k)\|$ across all agents over iterations
+    \item \textbf{Sigma Component Evolution Plots}: The implementation generates separate plots for each spatial dimension (X and Y components) of the barycenter estimate of each agent to show consensus
+    \item \textbf{Animation of the multi-robot system}: Animation of agents across iterations with private targets and barycenter visualization
+\end{itemize}
+
+
+
+\section{ROS 2 Implementation}
+The \textbf{ROS 2} implementation follows the structure of the previous pure Python implementation.\\\\
+The main elements are described below:\\\\
+\textbf{Launch File (\texttt{aggregative\_optimization\_launch.py})}
+
+\begin{itemize}
+    \item \textbf{Primary Function:} Configures the distributed multi-agent optimization system
+    \item \textbf{Key Features:}
+    \begin{itemize}
+    \item Contains \texttt{Agent\_Config} and \texttt{AggregativeSetup} classes for system configuration
+        \item Configures \textbf{communication topology} (Erd\H{o}s--R\'enyi, cycle, star, path, complete graphs)
+        \item Generates \textbf{Metropolis-Hastings} weights for \textbf{doubly stochastic} adjacency matrix
+        \item Initializes agent parameters (positions, targets, neighbors, weights etc.)
+        \item Launches multiple agent nodes, visualization nodes and \textbf{RViz} simultaneously
+        \end{itemize}
+\end{itemize}
+\textbf{Agent Node (\texttt{the\_agent.py})}
+
+\begin{itemize}
+    \item \textbf{Primary Function:} Implements individual optimization agent that communicate in a distributed network
+    \item \textbf{Key Features:}
+    \begin{itemize}
+        \item Performs \textbf{aggregative tracking} algorithm with proper synchronization with other agents
+        \item It is characterized by some attributes such as current state position $z_i^k$, private target position $r_i$, current $\sigma$ estimate $s_i^k$ 
+        \item Publishes optimization data on its own topic (\texttt{/topic\_\{agent\_id\}})
+        \item Subscribes to neighbor agents' topics for the distributed optimization algorithm
+        \item Sends visualization data to \texttt{/visualization\_data} topic
+    \end{itemize}
+\item \textbf{Agents' Synchronization}\\
+    The synchronization among agents in the distributed optimization algorithm works as follows:
+    agent \(i\) checks whether all messages from its neighbors related to iteration \(k - 1\) (required for the optimization step) have been received. If all messages are available, it proceeds with the optimization step. Otherwise, it exits the timer callback and increments a waiting counter. If the waiting counter exceeds a predefined threshold, an exception or warning is triggered to prevent the agent from continuing with outdated information, which could negatively affect convergence.
+\end{itemize}
+\textbf{Visualization Node (\texttt{visualization\_node.py})}
+
+\begin{itemize}
+    \item \textbf{Primary Function:} Collects and processes data from all agents for plotting
+    \item \textbf{Key Features:}
+    \begin{itemize}
+        \item Subscribes to \texttt{/visualization\_data} topic
+        \item Generates matplotlib plots total cost, total gradient norm, total sigma estimation error over iterations and an animation of the multi-robot system 
+    \end{itemize}
+\end{itemize}
+\textbf{Generic Visualizer (\texttt{the\_visualizer.py})}
+
+\begin{itemize}
+    \item \textbf{Primary Function:} Provides real-time markers to RViz for animation
+    \item \textbf{Key Features:}
+    \begin{itemize}
+        \item Subscribes to \texttt{/visualization\_data} topic
+        \item Publishes RViz markers on \texttt{/visualization\_markers} topic
+    \end{itemize}
+\end{itemize}
+\textbf{Rviz}
+\begin{itemize}
+    \item \textbf{Primary Function:} Creates a real-time animation of the multi-robot system
+    \item \textbf{Key Features:}
+    \begin{itemize}
+        \item Subscribes to \texttt{/visualization\_markers} topic
+        \item Displays agents as red spheres, targets as blue spheres, and the barycenter as a blue cube
+    \end{itemize}
+\end{itemize}
+
+
+
+\section{Results}
+In this section are reported the results of a set of simulations for task 2 with different communication graphs, number of agents, $\gamma_i$ etc. to showcase the effectiveness of the implementation. For all simulations, the main plots, including total cost, gradient norm and sigma estimation error over iterations are presented.
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Simulation} & \textbf{N (Agents)} & $\boldsymbol{\gamma_i}$  & \textbf{Graph Type} \\
+\hline
+Sim 1 & 8 & 1 & Cycle \\
+Sim 2 & 11 & 0.6 & Erd\H{o}s--R\'enyi \\
+\hline
+\end{tabular}
+\caption{Simulation parameters for task 2}
+\label{tab:sim-gamma}
+\end{table}
+
+\subsection{Task 2.1 Plots}
+\subsubsection{Simulation 1}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/mainplots_sim1_t2.1.png}
+    \caption{Total Cost, Gradient Norm, Sigma Estimation Error over Iterations (sim 1)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/sigma1_sim1_t2.1png}
+    \caption{Barycenter Estimate Component 1 (sim 1)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/sigma2_sim1_t2.1png}
+    \caption{Barycenter Estimate Component 2 (sim 1)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.7\textwidth]{figs/anim_sim1_t2.1.png}
+    \caption{Spatial Plot Agents, Targets and Barycenter (sim 1)}
+\end{figure}
+\subsubsection{Simulation 2}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/mainplots_sim2_t2.1.png}
+    \caption{Total Cost, Gradient Norm, Sigma Estimation Error over Iterations (sim 2)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/sigma1_sim2_t2.1.png}
+    \caption{Barycenter Estimate Component 1 (sim 2)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/sigma2_sim2_t2.1.png}
+    \caption{Barycenter Estimate Component 2 (sim 2)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.7\textwidth]{figs/anim_sim2_t2.1.png}
+    \caption{Spatial Plot Agents, Targets and Barycenter (sim 2)}
+\end{figure}
+\subsection{Task 2.2 Plots}
+
+%%%%%%%%%% Appendix %%%%%%%%%%
+\appendix
+\chapter{Graph Theory: Main Definitions and Properties}
+\label{app:graph_theory}
+
+This appendix provides key definitions and properties from graph theory, particularly those relevant to Distributed Consensus and Aggregative Optimization discussed in the report. 
+
+\section{Basic Graph Definitions}
+
+\begin{definition}[Digraph]
+A \textit{directed graph} (digraph) is a pair \( G = (\mathcal{I}, \mathcal{E}) \), where:
+\begin{itemize}
+    \item \( \mathcal{I} = \{1, \ldots, N\} \) is a set of nodes (agents).
+    \item \( \mathcal{E} \subset \mathcal{I} \times \mathcal{I} \) is a set of ordered edges representing communication links.
+\end{itemize}
+An edge \((i, j)\) denotes a link from node \(i\) to node \(j\). A \textit{self-loop} is an edge \((i, i)\).
+\end{definition}
+
+\begin{definition}[Undirected Graph]
+A digraph is \textit{undirected} if for every edge \((i, j) \in \mathcal{E}\), the reverse edge \((j, i) \in \mathcal{E}\). Such graphs can also be defined with unordered node pairs.
+\end{definition}
+
+\section{Connectivity and Periodicity}
+
+\begin{definition}[Strongly Connected Digraph]
+A digraph is \textit{strongly connected} if there exists a directed path from any node to any other node.
+\end{definition}
+
+\begin{definition}[Connected Undirected Graph]
+An undirected graph is \textit{connected} if there exists a path between any two nodes.
+\end{definition}
+
+\begin{definition}[Aperiodic Graph]
+A digraph is \textit{aperiodic} if the greatest common divisor of the lengths of all its cycles is 1. A graph with at least one self-loop is always aperiodic.
+\end{definition}
+
+\section{Weighted Graphs and Matrices}
+
+\begin{definition}[Weighted Digraph]
+A \textit{weighted digraph} is a triplet \( G = (\mathcal{I}, \mathcal{E}, \{a_{ij}\}_{(i,j) \in \mathcal{E}}) \), where \((\mathcal{I}, \mathcal{E})\) is a digraph and each \(a_{ij} > 0\) is a weight for edge \((i, j)\). Unweighted graphs can be treated as weighted graphs with all \(a_{ij} = 1\).
+\end{definition}
+
+\begin{definition}[Adjacency Matrix]
+The \textit{weighted adjacency matrix} \(A\) of a digraph is defined as:
+\[
+A_{ij} = 
+\begin{cases} 
+a_{ij} > 0 & \text{if } (i, j) \in \mathcal{E} \\
+0 & \text{otherwise}
+\end{cases}
+\]
+For unweighted graphs, \(A_{ij} = 1\) if \((i, j) \in \mathcal{E}\).
+\end{definition}
+
+\section{Stochastic Matrices}
+
+\begin{definition}[Row Stochastic Matrix]
+A non-negative matrix \(A \in \mathbb{R}^{N \times N}\) is \textit{row stochastic} if each row sums to 1, i.e., \(A\mathbf{1} = \mathbf{1}\) where \(\mathbf{1}\) is the vector of all ones.
+\end{definition}
+
+\begin{definition}[Column Stochastic Matrix]
+A non-negative matrix \(A \in \mathbb{R}^{N \times N}\) is \textit{column stochastic} if each column sums to 1, i.e., \(A^\top \mathbf{1} = \mathbf{1}\).
+\end{definition}
+
+\begin{definition}[Doubly Stochastic Matrix]
+A matrix \(A\) is \textit{doubly stochastic} if it is both row and column stochastic.
+\end{definition}
+
+\begin{theorem}[Metropolis-Hastings Weight Matrix]
+For an undirected graph $G = (\mathcal{I}, \mathcal{E})$, the Metropolis-Hastings weights construct a doubly stochastic and symmetric weighted adjacency matrix $A$ with entries:
+
+\[
+a_{ij} = 
+\begin{cases}
+\frac{1}{1 + \max\{d_i, d_j\}} & \text{if } (i,j) \in \mathcal{E} \text{ and } i \neq j \\
+1 - \sum\limits_{h \in \mathcal{N}_i \setminus \{i\}} a_{ih} & \text{if } i = j \\
+0 & \text{otherwise}
+\end{cases}
+\]
+where $d_i = |\mathcal{N}_i|$ is the degree of node $i$.
+\end{theorem}
+
+\begin{lemma}[Properties of Stochastic Matrices]
+Let \(A\) be a row-stochastic matrix with associated digraph \(G\). If \(G\) is strongly connected and aperiodic, then:
+\begin{itemize}
+    \item The eigenvalue \(\lambda = 1\) is simple
+    \item All other eigenvalues \(\mu\) satisfy \(|\mu| < 1\)
+\end{itemize}
+\end{lemma}
+
+\section{Averaging Systems}
+
+\begin{definition}[Discrete-Time Averaging System]
+Given a digraph \( G = (\mathcal{I}, \mathcal{E}) \) with self-loops, the linear averaging algorithm has two formulations:
+
+\begin{itemize}
+    \item \textbf{In-Neighbor Version}:
+    \[ x_i^{k+1} = \sum_{j \in \mathcal{N}_i^{\text{in}}} a_{ij}x_j^k \]
+    where \( A \) represents the adjacency matrix of the reverse communication graph \( G^{\text{comm,rev}} \)
+    
+    \item \textbf{Out-Neighbor Version}:
+    \[ x_i^{k+1} = \sum_{j \in \mathcal{N}_i^{\text{out}}} a_{ij}x_j^k \]
+    where \( A \) represents the adjacency matrix of the sensing graph \( G^{\text{sens}} \)
+\end{itemize}
+
+Both formulations can be compactly written as \( x^{k+1} = Ax^k \).
+\end{definition}
+
+\section{Consensus Results}
+
+\begin{theorem}[Consensus for Averaging Systems]
+Consider a discrete-time averaging system \( x^{k+1} = Ax^k \) with associated digraph \( G \) strongly connected and aperiodic and row-stochastic matrix \( A \). 
+then:
+\begin{enumerate}
+    \item There exists a positive left eigenvector \( w > 0 \) related to eigenvalue 1 such that:
+    \[\lim_{k\to\infty} x^k = \mathbf{1}\left(\frac{w^\top x^0}{w^\top\mathbf{1}}\right)\]
+    
+    \item If \( A \) is doubly stochastic, the system reaches average consensus:
+    \[\lim_{k\to\infty} x^k = \mathbf{1}\left(\frac{1}{N}\sum_{i=1}^N x_i^0\right)\]
+\end{enumerate}
+\end{theorem}
+
+\begin{remark}
+The consensus value is a weighted average of initial conditions when \( A \) is row-stochastic, and the exact average when \( A \) is doubly stochastic.
+\end{remark}
+
+
+
+%%%%%%%%%% Conclusions %%%%%%%%%%
+\chapter*{Conclusions}
+\addcontentsline{toc}{chapter}{Conclusions} 
+This report demonstrated the successful implementation of \textbf{distributed optimization algorithms} for multi-robot systems, focusing on \textbf{consensus-based target localization} (Task 1) and \textbf{aggregative optimization} (Task 2). The effectiveness was verified through:
+\begin{itemize}
+    \item \textbf{Cost function convergence} to optimal solutions
+    \item \textbf{Gradient norm reduction} below predefined thresholds
+    \item \textbf{Consensus achievement} across agents
+    \item \textbf{Real-time visualizations} of multi robot system behavior
+\end{itemize}
+The results confirm the algorithms' \textbf{robustness} and \textbf{scalability}. Future improvements could explore:
+\begin{itemize}
+    \item \textbf{Aggregative feedback optimization} to consider the dynamics of robots
+    \item \textbf{Moving targets} in Task 2 for dynamic environments
+    \item \textbf{Time varying graphs} for both tasks
+\end{itemize}
+
+%%%%%%%%%% Bibliography %%%%%%%%%%%
+\begin{thebibliography}{9}
+
+\bibitem{bullo2019}
+F. Bullo, 
+\textit{Lectures on Network Systems}, 
+1st ed., 
+Kindle Direct Publishing, 
+2019.
+
+\bibitem{notarnicola2021} 
+G. Notarstefano, I. Notarnicola, and A. Camisa, 
+``Distributed Optimization for Cyber-Physical Networks: Tutorial and Overview,'' 
+\textit{Foundations and Trends\textsuperscript{\textregistered} in Systems and Control}, 
+vol. 8, no. 4, 
+pp. 253-356, 
+2021.
+
+\bibitem{testa2023}
+A. Testa, G. Carnevale, and G. Notarstefano, 
+``A Tutorial on Distributed Optimization for Cooperative Robotics: From Setups and Algorithms to Toolboxes and Research Directions,'' 
+\textit{IEEE Robotics and Automation Magazine}, 
+vol. 30, no. 1, 
+pp. 65-81, 
+March 2023.
+
+\end{thebibliography}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
