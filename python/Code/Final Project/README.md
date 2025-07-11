@@ -10,4 +10,4 @@ It includes three main tasks:
 
 [task1]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/python/Code/Final%20Project/Task1
 [task21]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/python/Code/Final%20Project/Task2.1
-[task22]: [https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/python/Code/Final%20Project/Task2.2%20(at%2010-07-2025)](https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/python/Code/Final%20Project/Task2.2%20(at%2010-07-2025)/src/aggregative_optimization)
+[task22]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/python/Code/Final%20Project/Task2.2%20(at%2010-07-2025)/src/aggregative_optimization
