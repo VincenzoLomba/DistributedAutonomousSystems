@@ -6,7 +6,7 @@ from methods import Agent, AggregativeOptimizer, GraphType
 import numpy as np
 import matplotlib.pyplot as plt
 
-def task2dot1(N, L, d, graph, stepsize, maxIterations, tolerance):
+def task2dot1(N, L, d, graph, gamma, stepsize, maxIterations, tolerance):
 
     logger.newLine()
     logger.setActive("TASK2.1")
@@ -22,7 +22,7 @@ def task2dot1(N, L, d, graph, stepsize, maxIterations, tolerance):
     for agent in agents: agent.setTarget(np.random.uniform(0, L, size=d)) # Set a random target position (r_i) for each agent
     
     # Set gamma values to the various agents
-    for i, agent in enumerate(agents): agent.setGamma(1.0) # Set gamma (γ_i) for each agent
+    for i, agent in enumerate(agents): agent.setGamma(gamma[i]) # Set gamma (γ_i) for each agent
 
     # Define an AggregativeOptimizer instance and use it to run the simulation of the multi-robot system
     optimizer = AggregativeOptimizer(agents, graph) # Create an instance of AggregativeOptimizer (with the list of agents and the communication graph type)
@@ -46,10 +46,11 @@ def main():
     N = 8                    # Number of agents in the multi-robot system
     L = 10                   # Size of the area in which agents are placed (a square of side L with the bottom left corner at (0,0))
     d = 2                    # Dimension of agents' states (in which targets are defined and agents are moving)
-    graph = GraphType.CYCLE  # Type of communication graph to be used 
+    graph = GraphType.CYCLE  # Type of communication graph to be used
+    gamma = [1.0]*N          # List of gamma (γ_i) parameters for each agent's local cost function ℓ_i(z_i, σ) = γ_i‖z_i - r_i‖² + ‖σ - z_i‖²
     stepsize = 0.01          # Stepsize to be used
     maxIterations = 10000    # Maximum number of iterations for the simulation
     tolerance = 1e-7         # Tolerance to be used for the convergence of the method
-    task2dot1(N, L, d, graph, stepsize, maxIterations, tolerance)
+    task2dot1(N, L, d, graph, gamma, stepsize, maxIterations, tolerance)
 
 if __name__ == "__main__": main()

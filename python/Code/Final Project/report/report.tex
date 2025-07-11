@@ -265,7 +265,7 @@ Sim 1 (task 1.1) & 12 & - & 2 & Erd\H{o}s--R\'enyi \\
 Sim 2 (task 1.1) & 17 & - & 3 & Path \\
 Sim 3 (task 1.2) & 15 & 3 & 2 & Cycle \\
 Sim 4 (task 1.2) & 17 & 3 & 3 & Star \\
-Sim 5 (task 1.2) & 22 & 5 & 3 & RGG \\
+Sim 5 (task 1.2) & 22 & 5 & 2 & RGG \\
 \hline
 \end{tabular}
 \caption{Simulation parameters for task 1}
@@ -283,6 +283,11 @@ Sim 5 (task 1.2) & 22 & 5 & 3 & RGG \\
     \centering
     \includegraphics[width=1\textwidth]{figs/cons_sim1.png}
     \caption{ Estimates Evolution over Iterations (sim 1)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/cons_sim1_zoom.png}
+    \caption{ Estimates Evolution over Iterations Zoomed View (sim 1)}
 \end{figure}
 \subsubsection{Simulation 2}
 \begin{figure}[H] 
@@ -304,8 +309,18 @@ Sim 5 (task 1.2) & 22 & 5 & 3 & RGG \\
 \end{figure}
 \begin{figure}[H] 
     \centering
+    \includegraphics[width=1\textwidth]{figs/cons_targ0_sim3_zoom.png}
+    \caption{Position Estimate of Target 0 over Iterations Zoomed View (sim 3)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
     \includegraphics[width=1\textwidth]{figs/cons_targ1_sim3.png}
     \caption{Position Estimate of Target 1 over Iterations (sim 3)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/cons_targ1_sim3_zoom.png}
+    \caption{Position Estimate of Target 1 over Iterations Zoomed View (sim 3)}
 \end{figure}
 \begin{figure}[H] 
     \centering
@@ -314,8 +329,18 @@ Sim 5 (task 1.2) & 22 & 5 & 3 & RGG \\
 \end{figure}
 \begin{figure}[H] 
     \centering
+    \includegraphics[width=1\textwidth]{figs/cons_targ2_sim3_zoom.png}
+    \caption{Position Estimate of Target 2 over Iterations Zoomed View (sim 3)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
     \includegraphics[width=0.7\textwidth]{figs/anim_sim3.png}
     \caption{Spatial Plot of Agents and Targets (sim 3)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/G_sim3.png}
+    \caption{Communication Graph (sim 3)}
 \end{figure}
 \subsubsection{Simulation 4}
 \begin{figure}[H] 
@@ -328,11 +353,21 @@ Sim 5 (task 1.2) & 22 & 5 & 3 & RGG \\
     \includegraphics[width=0.7\textwidth]{figs/anim_sim4.png}
     \caption{Spatial Plot of Agents and Targets (sim 4)}
 \end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/G_sim4.png}
+    \caption{Communication Graph (sim 4)}
+\end{figure}
 \subsubsection{Simulation 5}
 \begin{figure}[H] 
     \centering
     \includegraphics[width=1\textwidth]{figs/mainplots_sim5.png}
     \caption{Total Cost, Gradient Norm, Consensus Error over Iterations (sim 5)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/G_sim5.png}
+    \caption{Communication Graph (sim 5)}
 \end{figure}
 %%%%%%%%%% Chapter 2 %%%%%%%%%%
 \chapter{Task 2: Aggregative Optimization for Multi-Robot Systems}
@@ -490,7 +525,7 @@ The main elements are described below:\\\\
     \item \textbf{Primary Function:} Configures the distributed multi-agent optimization system
     \item \textbf{Key Features:}
     \begin{itemize}
-    \item Contains \texttt{Agent\_Config} and \texttt{AggregativeSetup} classes for system configuration
+    \item Contains \texttt{AgentData} and \texttt{aggregativeSetup} classes for system configuration
         \item Configures \textbf{communication topology} (Erd\H{o}s--R\'enyi, cycle, star, path, complete graphs)
         \item Generates \textbf{Metropolis-Hastings} weights for \textbf{doubly stochastic} adjacency matrix
         \item Initializes agent parameters (positions, targets, neighbors, weights etc.)
@@ -511,9 +546,9 @@ The main elements are described below:\\\\
     \end{itemize}
 \item \textbf{Agents' Synchronization}\\
     The synchronization among agents in the distributed optimization algorithm works as follows:
-    agent \(i\) checks whether all messages from its neighbors related to iteration \(k - 1\) (required for the optimization step) have been received. If all messages are available, it proceeds with the optimization step. Otherwise, it exits the timer callback and increments a waiting counter. If the waiting counter exceeds a predefined threshold, an exception or warning is triggered to prevent the agent from continuing with outdated information, which could negatively affect convergence.
+    agent \(i\) checks whether all messages from its neighbors related to iteration \(k - 1\) (required for the optimization step) have been received. If all messages are available, it proceeds with the optimization step. Otherwise, it exits the timer callback and increments a waiting counter. If the waiting counter exceeds a predefined threshold, an exception is triggered to prevent the agent from continuing with outdated information, which could negatively affect convergence.
 \end{itemize}
-\textbf{Visualization Node (\texttt{visualization\_node.py})}
+\textbf{Plotter Node (\texttt{the\_plotter.py})}
 
 \begin{itemize}
     \item \textbf{Primary Function:} Collects and processes data from all agents for plotting
@@ -523,7 +558,7 @@ The main elements are described below:\\\\
         \item Generates matplotlib plots total cost, total gradient norm, total sigma estimation error over iterations and an animation of the multi-robot system 
     \end{itemize}
 \end{itemize}
-\textbf{Generic Visualizer (\texttt{the\_visualizer.py})}
+\textbf{Rviz2 Visualizer (\texttt{the\_rviz2visualizer.py})}
 
 \begin{itemize}
     \item \textbf{Primary Function:} Provides real-time markers to RViz for animation
@@ -575,8 +610,18 @@ Sim 2 & 11 & 0.6 & Erd\H{o}s--R\'enyi \\
 \end{figure}
 \begin{figure}[H] 
     \centering
+    \includegraphics[width=0.8\textwidth]{figs/sigma1_sim1_t2.1_zoom.png}
+    \caption{Barycenter Estimate Component 1 Zoomed View (sim 1)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
     \includegraphics[width=0.8\textwidth]{figs/sigma2_sim1_t2.1png}
     \caption{Barycenter Estimate Component 2 (sim 1)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/sigma2_sim1_t2.1_zoom.png}
+    \caption{Barycenter Estimate Component 2 Zoomed View (sim 1)}
 \end{figure}
 \begin{figure}[H] 
     \centering
@@ -596,8 +641,18 @@ Sim 2 & 11 & 0.6 & Erd\H{o}s--R\'enyi \\
 \end{figure}
 \begin{figure}[H] 
     \centering
+    \includegraphics[width=0.8\textwidth]{figs/sigma1_sim2_t2.1_zoom.png}
+    \caption{Barycenter Estimate Component 1 Zoomed View (sim 2)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
     \includegraphics[width=0.8\textwidth]{figs/sigma2_sim2_t2.1.png}
     \caption{Barycenter Estimate Component 2 (sim 2)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.8\textwidth]{figs/sigma2_sim2_t2.1_zoom.png}
+    \caption{Barycenter Estimate Component 2 Zoomed View (sim 2)}
 \end{figure}
 \begin{figure}[H] 
     \centering
@@ -605,6 +660,29 @@ Sim 2 & 11 & 0.6 & Erd\H{o}s--R\'enyi \\
     \caption{Spatial Plot Agents, Targets and Barycenter (sim 2)}
 \end{figure}
 \subsection{Task 2.2 Plots}
+\subsubsection{Simulation 1}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/mainplots_sim1_t2.2.png}
+    \caption{Total Cost, Gradient Norm, Sigma Estimation Error over Iterations (sim 1 ROS2)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/rv_sim1.png}
+    \caption{Rviz2 Visualization (sim 1)}
+\end{figure}
+\subsubsection{Simulation 2}
+Note that the plots below are identical to those from Simulation 2 in Task 2.1, except for the sigma estimation error, which differs due to numerical issues in ROS2.
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=1\textwidth]{figs/mainplots_sim2_t2.2.png}
+    \caption{Total Cost, Gradient Norm, Sigma Estimation Error over Iterations (sim 2 ROS2)}
+\end{figure}
+\begin{figure}[H] 
+    \centering
+    \includegraphics[width=0.6\textwidth]{figs/rv_sim2.png}
+    \caption{Rviz2 Visualization (sim 2)}
+\end{figure}
 
 %%%%%%%%%% Appendix %%%%%%%%%%
 \appendix
