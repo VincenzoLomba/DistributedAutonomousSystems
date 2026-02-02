@@ -25,4 +25,4 @@ Good work!
 [L3]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/docker
 [L4]: https://www.docker.com/products/docker-desktop
 [L5]: https://vcxsrv.com/
-[L6]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/blob/master/dockerworkspace/setup/imageBuilding/Dockerfile
+[L6]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/blob/master/docker/setup/imageBuilding/Dockerfile
