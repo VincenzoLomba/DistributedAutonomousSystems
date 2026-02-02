@@ -19,8 +19,8 @@ Download both the [setup folder][L0] ([*setup folder downlaod link*][L1]) and th
 
 Good work!
 
-[L0]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/dockerworkspace/setup
-[L1]: https://downgit.github.io/#/home?url=https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/dockerworkspace/setup
+[L0]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/docker/setup
+[L1]: https://downgit.github.io/#/home?url=https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/docker/setup
 [L2]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/blob/master/dockerworkspace/runROS2container.bat
 [L3]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/dockerworkspace
 [L4]: https://www.docker.com/products/docker-desktop
