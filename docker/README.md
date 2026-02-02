@@ -17,7 +17,7 @@ Download both the [setup folder][L0] ([*setup folder downlaod link*][L1]) and th
    ```docker run --rm -it --privileged --env="DISPLAY=host.docker.internal:0.0" --network=host --volume=%WS_PATH%:/home/user/%WS_NAME% --name %CONTAINER_NAME% %IMAGE_NAME%```<br>
    where ```%WS_PATH%``` and ```%WS_NAME%``` are respectively the path of the in-windows folder and the name of the in-container folder that need to be synchronized (the container is assumed to have a user named ```user``` associated to an home folder ```/home/user```), ```%CONTAINER_NAME%``` is the name of the Docker Container and ```%IMAGE_NAME%``` is the name of Docker Image defined at point three.
 
-Good work!
+Good work brotha!
 
 [L0]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/docker/setup
 [L1]: https://downgit.github.io/#/home?url=https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/docker/setup
