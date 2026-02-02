@@ -21,7 +21,7 @@ Good work!
 
 [L0]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/docker/setup
 [L1]: https://downgit.github.io/#/home?url=https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/docker/setup
-[L2]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/blob/master/dockerworkspace/runROS2container.bat
+[L2]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/blob/master/docker/runROS2container.bat
 [L3]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/dockerworkspace
 [L4]: https://www.docker.com/products/docker-desktop
 [L5]: https://vcxsrv.com/
