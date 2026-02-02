@@ -1,7 +1,7 @@
 ## Hi fellow control engineer! <br>Let's work with ROS2 on a Windows Docker Container!
 
 Hi fellow control engineer!<br>
-Download both the [setup folder][L0] ([*setup folder downlaod link*][L1]) and the [runROS2container.bat BAT file][L2]. Place them in the same folder (such as it is done in this [dockerworkspace][L3] folder). Then, just run [runROS2container.bat][L2], follow its instructions and start working!<br>
+Download both the [setup folder][L0] ([*setup folder downlaod link*][L1]) and the [runROS2container.bat BAT file][L2]. Place them in the same folder (such as it is done in this [docker][L3] folder). Then, just run [runROS2container.bat][L2], follow its instructions and start working!<br>
 **Notice that** the local folder "syncworkspace" and the container folder "/home/user/syncworkspace" will be synchronized in their content!<br>
 <br>
 **Otherwise**, here are the steps in case you want to set it up manually:
@@ -22,7 +22,7 @@ Good work!
 [L0]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/docker/setup
 [L1]: https://downgit.github.io/#/home?url=https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/docker/setup
 [L2]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/blob/master/docker/runROS2container.bat
-[L3]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/dockerworkspace
+[L3]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/tree/master/docker
 [L4]: https://www.docker.com/products/docker-desktop
 [L5]: https://vcxsrv.com/
 [L6]: https://github.com/VincenzoLomba/DistributedAutonomousSystems/blob/master/dockerworkspace/setup/imageBuilding/Dockerfile
